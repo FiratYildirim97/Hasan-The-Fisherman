@@ -138,7 +138,7 @@ const LocationScene: React.FC<{
 
           {/* CELESTIAL BODY */}
           <circle cx="85%" cy="15%" r={timeOfDay === 'night' ? 30 : 50} fill={timeOfDay === 'night' ? '#f1f5f9' : theme.sun} filter="url(#glow)" opacity="0.9">
-             {timeOfDay === 'night' && <animate attributeName="opacity" values="0.8;1;0.8" duration="4s" repeatCount="indefinite" />}
+             {timeOfDay === 'night' && <animate attributeName="opacity" values="0.8;1;0.8" dur="4s" repeatCount="indefinite" />}
           </circle>
 
           {/* CLOUDS (Common) */}
