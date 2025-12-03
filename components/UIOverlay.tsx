@@ -33,16 +33,14 @@ export const UIOverlay: React.FC = () => {
   const getBagPercent = () => (bag.length / stats.bagLimit) * 100;
   const getXpPercent = () => (stats.xp / (stats.level * 300)) * 100;
 
-  // Sorting Logic for Bag
   const sortedBag = [...bag].sort((a, b) => {
       if (settings.sortMode === 'value') return b.value - a.value;
       if (settings.sortMode === 'weight') return b.weight - a.weight;
-      return 0; // recent
+      return 0; 
   });
 
   return (
     <>
-      {/* Offline Earnings Modal */}
       <Modal isOpen={!!offlineEarningsModal} onClose={collectOfflineEarnings} title="Hoşgeldin!">
           <div className="text-center py-6">
               <div className="text-4xl mb-2">💤💰</div>
@@ -52,119 +50,126 @@ export const UIOverlay: React.FC = () => {
           </div>
       </Modal>
 
-      {/* News Ticker Bar */}
-      <div className="absolute top-14 w-full overflow-hidden bg-slate-900/80 border-y border-white/5 backdrop-blur-sm z-20 h-6 flex items-center pointer-events-none">
-          <div className="whitespace-nowrap animate-[marquee_15s_linear_infinite] text-[10px] font-mono text-cyan-300 px-4">
-              📢 {newsTicker} &nbsp;&nbsp;&nbsp; • &nbsp;&nbsp;&nbsp; 🏦 Banka Faizi: %1/dk &nbsp;&nbsp;&nbsp; • &nbsp;&nbsp;&nbsp; 🏆 Turnuva Yakında!
-          </div>
-      </div>
-
-      <div className="absolute top-0 w-full p-3 flex justify-between items-start z-30 pt-safe-top bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
-        <div className="flex flex-col gap-0.5 pointer-events-auto max-w-[45%]">
-          <div className="flex items-center gap-2 bg-slate-900/60 backdrop-blur border border-slate-700 px-2.5 py-1 rounded-full text-xs font-bold text-white whitespace-nowrap">
-            <span className="text-blue-400">LVL {stats.level}</span>
-            <span className="text-slate-500">|</span>
-            <span className="truncate">{stats.xp}/{stats.level * 300} XP</span>
-          </div>
-          <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden mt-0.5 relative">
-            <div className="h-full bg-blue-500 transition-all duration-500" style={{ width: `${getXpPercent()}%` }} />
-            {Date.now() < buffs.xpBoostExpiry && <div className="absolute inset-0 bg-purple-500/50 animate-pulse" />}
-          </div>
-          
-          <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden mt-0.5 flex">
-             <div className="h-full bg-green-500 transition-all duration-500" style={{ width: `${ecologyScore}%` }} />
-          </div>
-          <div className="text-[8px] text-green-300 font-bold uppercase tracking-widest">{ecologyScore >= 100 ? 'DOĞA DOSTU (BONUS AKTİF)' : 'Ekoloji Puanı'}</div>
-
-          {marketTrend && (
-             <div className="mt-1 text-[9px] text-green-300 font-medium bg-green-900/30 px-2 py-0.5 rounded-full inline-block border border-green-500/20 animate-pulse">
-                📈 Trend: {marketTrend.fishName} (x{marketTrend.multiplier})
-             </div>
-          )}
-          <div className="mt-1 flex items-center gap-1">
-              <div className="text-[9px] text-amber-300 font-medium bg-amber-900/30 px-2 py-0.5 rounded-full inline-block border border-amber-500/20">
-                🔮 {dailyFortune}
-              </div>
-              <button onClick={rerollFortune} className="p-0.5 bg-slate-800 rounded-full text-slate-400 hover:text-white" title="Falı Yenile (1000 TL)"><RefreshCw size={10} /></button>
-          </div>
-        </div>
-
-        <div className="flex flex-col items-end gap-1 pointer-events-auto">
-            <div className="flex items-center gap-1.5">
-                <div 
-                    onClick={() => setActiveModal('bank')}
-                    className="bg-slate-900/60 backdrop-blur border border-yellow-500/30 px-3 py-1.5 rounded-full font-mono font-bold text-yellow-400 text-xs sm:text-sm shadow-[0_0_15px_rgba(234,179,8,0.2)] cursor-pointer hover:bg-slate-800 transition"
-                >
-                    {stats.money.toLocaleString()} TL
+      <div className="absolute top-0 inset-x-0 z-30 flex flex-col pointer-events-none">
+          <div className="w-full p-3 pt-safe-top bg-gradient-to-b from-black/90 to-transparent flex justify-between items-start pointer-events-auto">
+            <div className="flex flex-col gap-0.5 max-w-[50%] sm:max-w-xs">
+                <div className="flex items-center gap-2 bg-slate-900/60 backdrop-blur border border-slate-700 px-2.5 py-1 rounded-full text-xs font-bold text-white whitespace-nowrap shadow-lg">
+                    <span className="text-blue-400">LVL {stats.level}</span>
+                    <span className="text-slate-600">|</span>
+                    <span className="truncate">{stats.xp}/{stats.level * 300} XP</span>
+                </div>
+                <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden mt-0.5 relative shadow-inner">
+                    <div className="h-full bg-blue-500 transition-all duration-500" style={{ width: `${getXpPercent()}%` }} />
+                    {Date.now() < buffs.xpBoostExpiry && <div className="absolute inset-0 bg-purple-500/50 animate-pulse" />}
                 </div>
                 
-                <button onClick={() => setActiveModal('career')} className="p-1.5 bg-slate-900/60 backdrop-blur border border-slate-700 rounded-full text-amber-500 active:scale-95 transition"><Trophy size={14} /></button>
-                <button onClick={toggleMute} className="p-1.5 bg-slate-900/60 backdrop-blur border border-slate-700 rounded-full text-slate-400 active:scale-95 transition">{isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}</button>
+                <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden mt-0.5 flex shadow-inner">
+                    <div className="h-full bg-green-500 transition-all duration-500" style={{ width: `${ecologyScore}%` }} />
+                </div>
+                <div className="text-[9px] text-green-300 font-bold uppercase tracking-widest drop-shadow-md">{ecologyScore >= 100 ? 'DOĞA DOSTU!' : 'Ekoloji Puanı'}</div>
+
+                {marketTrend && (
+                    <div className="mt-1 text-[9px] text-green-300 font-medium bg-green-900/80 px-2 py-0.5 rounded-full inline-block border border-green-500/30 animate-pulse shadow-lg">
+                        📈 Trend: {marketTrend.fishName} (x{marketTrend.multiplier})
+                    </div>
+                )}
+                <div className="mt-1 flex items-center gap-1">
+                    <div className="text-[9px] text-amber-300 font-medium bg-amber-900/80 px-2 py-0.5 rounded-full inline-block border border-amber-500/30 shadow-lg">
+                        🔮 {dailyFortune}
+                    </div>
+                    <button onClick={rerollFortune} className="p-1 bg-slate-800 rounded-full text-slate-400 hover:text-white border border-slate-600" title="Falı Yenile (1000 TL)"><RefreshCw size={10} /></button>
+                </div>
             </div>
-            
-            {Date.now() < buffs.xpBoostExpiry && (
-                <div className="bg-purple-900/80 border border-purple-500/50 px-2 py-0.5 rounded text-[9px] text-purple-200 font-bold animate-pulse flex items-center gap-1">
-                    <Zap size={10} /> 2x XP ({Math.ceil((buffs.xpBoostExpiry - Date.now())/60000)}dk)
+
+            <div className="flex flex-col items-end gap-2">
+                <div className="flex items-center gap-1.5">
+                    <div 
+                        onClick={() => setActiveModal('bank')}
+                        className="bg-slate-900/80 backdrop-blur border border-yellow-500/30 px-3 py-1.5 rounded-full font-mono font-bold text-yellow-400 text-xs sm:text-sm shadow-[0_0_15px_rgba(234,179,8,0.2)] cursor-pointer hover:bg-slate-800 transition transform active:scale-95"
+                    >
+                        {stats.money.toLocaleString()} TL
+                    </div>
+                    
+                    <button onClick={() => setActiveModal('career')} className="p-2 bg-slate-900/80 backdrop-blur border border-slate-700 rounded-full text-amber-500 active:scale-95 transition hover:bg-slate-800"><Trophy size={16} /></button>
+                    <button onClick={toggleMute} className="p-2 bg-slate-900/80 backdrop-blur border border-slate-700 rounded-full text-slate-400 active:scale-95 transition hover:bg-slate-800">{isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}</button>
                 </div>
-            )}
-            {buffs.goldenHook && (
-                <div className="bg-yellow-900/80 border border-yellow-500/50 px-2 py-0.5 rounded text-[9px] text-yellow-200 font-bold animate-pulse flex items-center gap-1">
-                    <Anchor size={10} /> Altın İğne
-                </div>
-            )}
-        </div>
+                
+                {Date.now() < buffs.xpBoostExpiry && (
+                    <div className="bg-purple-900/90 border border-purple-500/50 px-2 py-0.5 rounded text-[10px] text-purple-200 font-bold animate-pulse flex items-center gap-1 shadow-lg">
+                        <Zap size={12} /> 2x XP ({Math.ceil((buffs.xpBoostExpiry - Date.now())/60000)}dk)
+                    </div>
+                )}
+                {buffs.goldenHook && (
+                    <div className="bg-yellow-900/90 border border-yellow-500/50 px-2 py-0.5 rounded text-[10px] text-yellow-200 font-bold animate-pulse flex items-center gap-1 shadow-lg">
+                        <Anchor size={12} /> Altın İğne
+                    </div>
+                )}
+            </div>
+          </div>
+
+          <div className="w-full px-2 mt-2 flex justify-between items-start pointer-events-none">
+             <div className="flex flex-col gap-2">
+                 {tournament.active && (
+                    <div className="bg-slate-900/90 backdrop-blur-md p-2.5 rounded-xl shadow-[0_0_15px_rgba(234,88,12,0.4)] border-l-4 border-orange-500 w-36 animate-slide-in-left pointer-events-auto">
+                        <div className="flex items-center gap-2 text-orange-400 font-black text-[10px] uppercase tracking-widest mb-1"><Crown size={12} className="animate-bounce" /> Turnuva</div>
+                        <div className="w-full h-1 bg-slate-700 rounded-full overflow-hidden mb-1"><div className="h-full bg-gradient-to-r from-orange-500 to-red-500 transition-all duration-1000 linear" style={{ width: `${(tournament.timeLeft / 60) * 100}%` }} /></div>
+                        <div className="flex justify-between items-end"><div className="text-lg font-mono font-bold text-white leading-none">{tournament.playerScore}</div><div className="text-[9px] text-slate-400 font-bold uppercase">PUAN</div></div>
+                    </div>
+                 )}
+             </div>
+
+             <div className="flex flex-col gap-2">
+                {bounty.active && (
+                    <div className="bg-slate-900/90 backdrop-blur-md p-2.5 rounded-xl shadow-[0_0_15px_rgba(234,88,12,0.4)] border-r-4 border-red-500 w-36 text-right animate-slide-in-right pointer-events-auto">
+                        <div className="flex items-center justify-end gap-2 text-red-400 font-black text-[10px] uppercase tracking-widest mb-1">ARANAN <Target size={12} className="animate-pulse" /></div>
+                        <div className="flex justify-between items-center mb-1"><div className="text-2xl animate-bounce">{FISH_DB[bounty.locId].find(f => f.name === bounty.fishName)?.emoji}</div><div><div className="text-sm font-bold text-white leading-none">{bounty.fishName}</div><div className="text-xs text-slate-400 font-mono">Min {bounty.minWeight}kg</div></div></div>
+                        <div className="text-[10px] text-yellow-400 font-bold bg-slate-800 rounded px-1 py-0.5 inline-block">Ödül: {bounty.reward} TL</div>
+                    </div>
+                )}
+             </div>
+          </div>
       </div>
-
-      {/* Widgets */}
-      {tournament.active && (
-        <div className="absolute top-24 left-2 z-20 pointer-events-none animate-slide-in-left origin-top-left scale-90 sm:scale-100">
-           <div className="bg-slate-900/90 backdrop-blur-md p-2.5 rounded-xl shadow-[0_0_15px_rgba(234,88,12,0.4)] border-l-4 border-orange-500 w-36">
-              <div className="flex items-center gap-2 text-orange-400 font-black text-[10px] uppercase tracking-widest mb-1"><Crown size={12} className="animate-bounce" /> Turnuva</div>
-              <div className="w-full h-1 bg-slate-700 rounded-full overflow-hidden mb-1"><div className="h-full bg-gradient-to-r from-orange-500 to-red-500 transition-all duration-1000 linear" style={{ width: `${(tournament.timeLeft / 60) * 100}%` }} /></div>
-              <div className="flex justify-between items-end"><div className="text-lg font-mono font-bold text-white leading-none">{tournament.playerScore}</div><div className="text-[9px] text-slate-400 font-bold uppercase">PUAN</div></div>
-           </div>
-        </div>
-      )}
-
-      {bounty.active && (
-        <div className="absolute top-24 right-2 z-20 pointer-events-none animate-slide-in-right origin-top-right scale-90 sm:scale-100">
-           <div className="bg-slate-900/90 backdrop-blur-md p-2.5 rounded-xl shadow-[0_0_15px_rgba(234,88,12,0.4)] border-r-4 border-red-500 w-36 text-right">
-              <div className="flex items-center justify-end gap-2 text-red-400 font-black text-[10px] uppercase tracking-widest mb-1">ARANAN <Target size={12} className="animate-pulse" /></div>
-              <div className="flex justify-between items-center mb-1"><div className="text-2xl animate-bounce">{FISH_DB[bounty.locId].find(f => f.name === bounty.fishName)?.emoji}</div><div><div className="text-sm font-bold text-white leading-none">{bounty.fishName}</div><div className="text-xs text-slate-400 font-mono">Min {bounty.minWeight}kg</div></div></div>
-              <div className="text-[10px] text-yellow-400 font-bold bg-slate-800 rounded px-1 py-0.5 inline-block">Ödül: {bounty.reward} TL</div>
-           </div>
-        </div>
-      )}
       
       {combo > 1 && (
-         <div className="absolute top-44 left-1/2 -translate-x-1/2 z-10 pointer-events-none animate-scale-in">
-            <div className="text-center"><div className="text-4xl font-black italic text-transparent bg-clip-text bg-gradient-to-b from-fuchsia-400 to-purple-600 drop-shadow-[0_4px_0_rgba(0,0,0,0.5)]">x{combo}</div><div className="text-[10px] font-bold text-fuchsia-200 bg-purple-900/60 px-2 py-0.5 rounded-full mt-1 border border-purple-500/30">+{Math.floor(combo * 10)}% Fiyat</div></div>
+         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 z-20 pointer-events-none animate-scale-in">
+            <div className="text-center"><div className="text-5xl font-black italic text-transparent bg-clip-text bg-gradient-to-b from-fuchsia-400 to-purple-600 drop-shadow-[0_4px_0_rgba(0,0,0,0.5)]">x{combo}</div><div className="text-xs font-bold text-fuchsia-200 bg-purple-900/80 px-3 py-1 rounded-full mt-1 border border-purple-500/50 shadow-lg">+{Math.floor(combo * 10)}% Fiyat</div></div>
          </div>
       )}
 
-      <div className="absolute bottom-0 w-full p-3 pb-safe-bottom z-30 flex flex-col gap-3 bg-gradient-to-t from-slate-950 via-slate-900/90 to-transparent">
-        <div className="flex justify-between px-2 text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
-           <div className="flex items-center gap-1">
-              <div className={`w-2 h-2 rounded-full ${stats.rodHp > 3 ? 'bg-green-500' : 'bg-red-500 animate-pulse'}`} />
-              Can: <span className={stats.rodHp < 3 ? 'text-red-400' : 'text-slate-200'}>{Math.ceil(stats.rodHp)}/{RODS[stats.rodId].maxHp}</span>
-              {rodMastery[stats.rodId] > 0 && <span className="text-purple-400 ml-1">★{Math.floor(rodMastery[stats.rodId]/50)}</span>}
-           </div>
-           <div className="flex items-center gap-1">Yem: <span className="text-slate-200">{stats.baitId ? BAITS.find(b => b.id === stats.baitId)?.name : 'YOK'}</span></div>
+      <div className="absolute bottom-0 w-full pb-safe-bottom z-30 bg-gradient-to-t from-slate-950 via-slate-900/95 to-transparent pt-2 pointer-events-none">
+        
+        <div className="w-full overflow-hidden bg-slate-900/80 border-t border-white/10 backdrop-blur-sm h-6 flex items-center mb-2 pointer-events-auto shadow-lg">
+            <div className="whitespace-nowrap animate-[marquee_20s_linear_infinite] text-[10px] font-mono text-cyan-300 px-4">
+                📢 {newsTicker} &nbsp;&nbsp;&nbsp; • &nbsp;&nbsp;&nbsp; 🏦 Banka Faizi: %1/dk &nbsp;&nbsp;&nbsp; • &nbsp;&nbsp;&nbsp; 🏆 Turnuva Yakında! &nbsp;&nbsp;&nbsp; • &nbsp;&nbsp;&nbsp; 💡 İpucu: Çöpleri geri dönüştür!
+            </div>
         </div>
 
-        <button onClick={castRod} disabled={gameState !== 'IDLE'} className={`w-full py-4 rounded-2xl font-black text-xl tracking-[0.2em] shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100 ${gameState === 'IDLE' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-blue-900/40 hover:brightness-110' : 'bg-slate-700 text-slate-400 cursor-not-allowed'}`}>{gameState === 'IDLE' ? 'OLTA AT' : 'BEKLENİYOR...'}</button>
+        <div className="pointer-events-auto px-3 pb-3 max-w-2xl mx-auto w-full">
+            <div className="flex justify-between px-2 text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+            <div className="flex items-center gap-2 bg-slate-900/50 px-2 py-1 rounded-lg border border-slate-700">
+                <div className={`w-2 h-2 rounded-full ${stats.rodHp > 3 ? 'bg-green-500' : 'bg-red-500 animate-pulse'}`} />
+                Can: <span className={stats.rodHp < 3 ? 'text-red-400' : 'text-slate-200'}>{Math.ceil(stats.rodHp)}/{RODS[stats.rodId].maxHp}</span>
+                {rodMastery[stats.rodId] > 0 && <span className="text-purple-400 ml-1 flex items-center">★{Math.floor(rodMastery[stats.rodId]/50)}</span>}
+            </div>
+            <div className="flex items-center gap-2 bg-slate-900/50 px-2 py-1 rounded-lg border border-slate-700">
+                Yem: <span className={stats.baitId ? 'text-emerald-300' : 'text-slate-500'}>{stats.baitId ? BAITS.find(b => b.id === stats.baitId)?.name : 'YOK'}</span>
+            </div>
+            </div>
 
-        <div className="grid grid-cols-5 gap-2">
-           <MenuBtn icon={<Briefcase size={20} />} label="Çanta" onClick={() => setActiveModal('bag')} badge={getBagPercent() >= 100 ? '!' : bag.length > 0 ? bag.length.toString() : undefined} />
-           <MenuBtn icon={<Fish size={20} />} label="Akvaryum" onClick={() => setActiveModal('aqua')} badge={aquarium.length > 0 ? `${aquarium.length}/${stats.aquaLimit}` : undefined} />
-           <MenuBtn icon={<ScrollText size={20} />} label="Görevler" onClick={() => setActiveModal('quests')} badge={quests.some(q => !q.claimed && q.current >= q.target) ? '!' : undefined} />
-           <MenuBtn icon={<BookOpen size={20} />} label="Rehber" onClick={() => setActiveModal('pedia')} />
-           <MenuBtn icon={<ShoppingCart size={20} />} label="Market" onClick={() => setActiveModal('shop')} badge={activeDiscount ? '%' : undefined} />
-        </div>
+            <button onClick={castRod} disabled={gameState !== 'IDLE'} className={`w-full py-4 mb-3 rounded-2xl font-black text-xl tracking-[0.2em] shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100 ${gameState === 'IDLE' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-blue-900/40 hover:brightness-110' : 'bg-slate-700 text-slate-400 cursor-not-allowed'}`}>{gameState === 'IDLE' ? 'OLTA AT' : 'BEKLENİYOR...'}</button>
 
-        <div className="grid grid-cols-2 gap-2">
-           <MenuBtn icon={<Map size={18} />} label="Harita" onClick={() => setActiveModal('map')} horizontal />
-           <MenuBtn icon={<Settings size={18} />} label="Yetenek" onClick={() => setActiveModal('skills')} horizontal />
+            <div className="grid grid-cols-5 gap-2 mb-2">
+            <MenuBtn icon={<Briefcase size={20} />} label="Çanta" onClick={() => setActiveModal('bag')} badge={getBagPercent() >= 100 ? '!' : bag.length > 0 ? bag.length.toString() : undefined} />
+            <MenuBtn icon={<Fish size={20} />} label="Akvaryum" onClick={() => setActiveModal('aqua')} badge={aquarium.length > 0 ? `${aquarium.length}/${stats.aquaLimit}` : undefined} />
+            <MenuBtn icon={<ScrollText size={20} />} label="Görevler" onClick={() => setActiveModal('quests')} badge={quests.some(q => !q.claimed && q.current >= q.target) ? '!' : undefined} />
+            <MenuBtn icon={<BookOpen size={20} />} label="Rehber" onClick={() => setActiveModal('pedia')} />
+            <MenuBtn icon={<ShoppingCart size={20} />} label="Market" onClick={() => setActiveModal('shop')} badge={activeDiscount ? '%' : undefined} />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+            <MenuBtn icon={<Map size={18} />} label="Harita" onClick={() => setActiveModal('map')} horizontal />
+            <MenuBtn icon={<Settings size={18} />} label="Yetenek" onClick={() => setActiveModal('skills')} horizontal />
+            </div>
         </div>
       </div>
 
@@ -179,11 +184,11 @@ export const UIOverlay: React.FC = () => {
       <Modal isOpen={activeModal === 'bag'} onClose={() => setActiveModal(null)} title={`Çanta (${bag.length}/${stats.bagLimit})`}>
         <div className="flex justify-between items-center mb-4">
             <button onClick={() => toggleSetting('sortMode')} className="bg-slate-800 text-xs px-3 py-2 rounded text-slate-300 flex items-center gap-1"><ArrowUpDown size={12}/> {settings.sortMode === 'recent' ? 'Yeniler' : settings.sortMode === 'value' ? 'Pahalılar' : 'Ağırlar'}</button>
-            <button onClick={() => toggleSetting('bulkSellSafe')} className={`text-xs px-3 py-2 rounded flex items-center gap-1 ${settings.bulkSellSafe ? 'bg-green-900/50 text-green-300 border border-green-500/50' : 'bg-slate-800 text-slate-400'}`}>Güvenli Satış: {settings.bulkSellSafe ? 'AÇIK' : 'KAPALI'}</button>
+            <button onClick={() => toggleSetting('bulkSellSafe')} className={`text-xs px-3 py-2 rounded flex items-center gap-1 transition ${settings.bulkSellSafe ? 'bg-green-900/50 text-green-300 border border-green-500/50' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>Güvenli Satış: {settings.bulkSellSafe ? 'AÇIK' : 'KAPALI'}</button>
         </div>
         <div className="flex gap-2 mb-4">
-          <button onClick={sellAll} className="flex-1 bg-yellow-600 hover:bg-yellow-500 text-white py-2 rounded-lg font-bold text-sm transition">Tümünü Sat</button>
-          <button onClick={recycleJunk} className="flex-1 bg-emerald-700 hover:bg-emerald-600 text-white py-2 rounded-lg font-bold text-sm transition flex items-center justify-center gap-1"><Recycle size={14} /> 5 Çöp Dönüştür</button>
+          <button onClick={sellAll} className="flex-1 bg-yellow-600 hover:bg-yellow-500 text-white py-2 rounded-lg font-bold text-sm transition shadow-lg shadow-yellow-900/20">Tümünü Sat</button>
+          <button onClick={recycleJunk} className="flex-1 bg-emerald-700 hover:bg-emerald-600 text-white py-2 rounded-lg font-bold text-sm transition flex items-center justify-center gap-1 shadow-lg shadow-emerald-900/20"><Recycle size={14} /> 5 Çöp Dönüştür</button>
         </div>
         {bag.length === 0 ? <div className="text-center text-slate-500 py-8">Çantanız boş</div> : (
           <div className="space-y-2">
@@ -217,7 +222,7 @@ export const UIOverlay: React.FC = () => {
             {visitorTip && visitorTip.active && (
                 <button 
                     onClick={collectVisitorTip}
-                    className="absolute -top-3 -right-3 bg-yellow-500 text-black font-bold px-3 py-1 rounded-full animate-bounce shadow-lg z-50 border-2 border-white"
+                    className="absolute -top-3 -right-3 bg-yellow-500 text-black font-bold px-3 py-1 rounded-full animate-bounce shadow-lg z-50 border-2 border-white hover:scale-110 transition"
                 >
                     💰 +{visitorTip.amount} TL Bahşiş!
                 </button>
@@ -231,6 +236,23 @@ export const UIOverlay: React.FC = () => {
         </div>
         <AdvancedAquarium fish={aquarium} activeDecor={activeDecor} isClean={Date.now() < filterExpiry} />
         <div className="space-y-2 max-h-48 overflow-y-auto pr-1">{aquarium.map((item) => (<div key={item.id} className="flex items-center justify-between bg-slate-800 p-2 rounded-xl border border-slate-700"><div className="flex items-center gap-3"><div className="w-8 h-8"><FishRenderer visual={item.visual} /></div><div><div className="font-bold text-xs text-slate-200">{item.petName || item.name}</div><div className="text-[10px] text-slate-400">{item.weight} kg</div></div></div><button onClick={() => sellItem(item.id, true)} className="px-3 py-1 bg-red-900/20 text-red-400 rounded-lg text-xs font-bold hover:bg-red-900/30">Sat</button></div>))}</div>
+      </Modal>
+
+      <Modal isOpen={activeModal === 'bank'} onClose={() => setActiveModal(null)} title="Banka">
+          <div className="p-4 bg-slate-800/50 rounded-xl border border-slate-700 text-center mb-4">
+              <div className="text-slate-400 text-xs font-bold uppercase mb-1">Hesap Bakiyesi</div>
+              <div className="text-3xl font-mono font-black text-white">{stats.bankBalance.toLocaleString()} TL</div>
+              <div className="text-green-400 text-xs mt-1">Faiz: %1 / Dakika (+{Math.floor(stats.bankBalance * 0.01)} TL)</div>
+          </div>
+          <div className="flex flex-col gap-3">
+              <div className="flex gap-2">
+                  <input type="number" placeholder="Miktar" className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white font-mono focus:outline-none focus:border-blue-500 transition" value={bankAmount} onChange={(e) => setBankAmount(e.target.value)} />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                  <button onClick={() => { bankDeposit(Number(bankAmount)); setBankAmount(''); }} className="bg-green-600 hover:bg-green-500 py-3 rounded-lg font-bold text-white shadow-lg">YATIR</button>
+                  <button onClick={() => { bankWithdraw(Number(bankAmount)); setBankAmount(''); }} className="bg-red-600 hover:bg-red-500 py-3 rounded-lg font-bold text-white shadow-lg">ÇEK</button>
+              </div>
+          </div>
       </Modal>
 
       <Modal isOpen={activeModal === 'shop'} onClose={() => setActiveModal(null)} title="Market">
