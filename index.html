@@ -25,6 +25,8 @@
         overflow: hidden; /* Prevent pull-to-refresh on mobile */
         touch-action: none;
         -webkit-tap-highlight-color: transparent;
+        user-select: none;
+        -webkit-user-select: none;
       }
       
       /* Safe area padding for iPhones with notch */
@@ -32,13 +34,33 @@
       .pb-safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
       
       /* Custom Scrollbar for modals */
-      ::-webkit-scrollbar { width: 6px; }
+      ::-webkit-scrollbar { width: 4px; }
       ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
       ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 3px; }
       ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
 
+      /* Global Animations */
       .animate-float { animation: float 3s ease-in-out infinite; }
       @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+
+      /* UI Transitions */
+      .animate-slide-in-left { animation: slideInLeft 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+      @keyframes slideInLeft { from { opacity: 0; transform: translateX(-50px); } to { opacity: 1; transform: translateX(0); } }
+
+      .animate-slide-in-right { animation: slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+      @keyframes slideInRight { from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: translateX(0); } }
+
+      .animate-slide-up { animation: slideUp 0.3s ease-out forwards; }
+      @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+      .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+      .animate-scale-in { animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+      @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+      
+      /* Utilities */
+      .clip-triangle { clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
     </style>
   <script type="importmap">
 {

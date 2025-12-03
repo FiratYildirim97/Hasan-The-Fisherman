@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { useGame } from '../GameContext';
+import { FishRenderer } from './Scene';
 
 export const Celebration: React.FC = () => {
   const { celebrationFish, closeCelebration } = useGame();
@@ -45,7 +46,11 @@ export const Celebration: React.FC = () => {
         </h2>
         
         <div className="bg-slate-800/80 p-6 rounded-3xl border-2 border-yellow-500/50 shadow-2xl flex flex-col items-center gap-2 min-w-[280px]">
-          <div className="text-6xl mb-2 filter drop-shadow-lg">{celebrationFish.emoji}</div>
+          {/* Main Visual */}
+          <div className="w-48 h-48 mb-2 filter drop-shadow-[0_0_15px_rgba(234,179,8,0.5)] animate-[float_4s_ease-in-out_infinite]">
+             <FishRenderer visual={celebrationFish.visual} />
+          </div>
+          
           <div className="text-2xl font-bold text-white">{celebrationFish.name}</div>
           <div className="flex gap-4 mt-2 text-sm font-mono text-slate-300">
              <span>⚖️ {celebrationFish.weight} kg</span>
@@ -69,6 +74,7 @@ export const Celebration: React.FC = () => {
         }
         @keyframes scaleIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes float { 0% { transform: translateY(0); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0); } }
       `}</style>
     </div>
   );
