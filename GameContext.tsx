@@ -418,10 +418,10 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       const interval = setInterval(() => {
           if (Math.random() < 0.4) spawnCustomer();
-          setActiveCustomers((prev: Customer[]) => prev.map(c => ({
+          setActiveCustomers((prev: Customer[]) => prev.map((c: Customer) => ({
               ...c, 
               patience: c.patience - (c.isVip ? 4 : 2)
-          })).filter(c => {
+          })).filter((c: Customer) => {
               if (c.patience <= 0) {
                   setRestaurant((r: RestaurantState) => ({...r, reputation: Math.max(0, r.reputation - 10)})); // Bigger penalty
                   showToast("Müşteri Sinirlendi!", "text-red-400");
