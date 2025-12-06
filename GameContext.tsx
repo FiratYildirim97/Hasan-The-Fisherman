@@ -342,6 +342,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
   }, [activeEvent, playSound, showToast]);
 
+  // ... (Rest of existing restaurant logic, unlockRestaurant etc.)
   const buyIngredient = (type: 'vegetables' | 'meze' | 'raki' | 'oil', amount: number, cost: number) => {
       if (stats.money >= cost) {
           setStats((prev: PlayerStats) => ({ ...prev, money: prev.money - cost }));
@@ -391,7 +392,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const diff = Math.min(5, 1 + Math.floor(restaurant.reputation / 100));
           const orderType = Math.random() < 0.2 ? 'raki_table' : Math.random() < 0.6 ? 'grilled' : 'sandwich';
           
-          const customer: Customer = {
+          const customer: Customer & { isVip?: boolean } = {
               id: Date.now() + Math.random(),
               name: isVip ? `⭐ GURME ${names[Math.floor(Math.random() * names.length)]}` : names[Math.floor(Math.random() * names.length)],
               order: orderType,
@@ -420,7 +421,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (Math.random() < 0.4) spawnCustomer();
           setActiveCustomers((prev: Customer[]) => prev.map((c: Customer) => ({
               ...c, 
-              patience: c.patience - (c.isVip ? 4 : 2)
+              patience: c.patience - (c['isVip'] ? 4 : 2)
           })).filter((c: Customer) => {
               if (c.patience <= 0) {
                   setRestaurant((r: RestaurantState) => ({...r, reputation: Math.max(0, r.reputation - 10)})); // Bigger penalty
@@ -436,7 +437,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [isRestaurantOpen, restaurant.isUnlocked, activeCustomers.length, restaurant.reputation, playSound, showToast]);
 
   const serveCustomer = (customerId: number, fishId: string) => {
-      const customer = activeCustomers.find(c => c.id === customerId);
+      const customer = activeCustomers.find(c => c.id === customerId) as (Customer & { isVip?: boolean }) | undefined;
       const fish = bag.find(f => f.id === fishId);
       if (!customer || !fish) return;
 
