@@ -231,6 +231,7 @@ export interface Customer {
   patience: number;
   maxPatience: number;
   reward: number;
+  isVip?: boolean;
 }
 
 export interface GameEvent {
