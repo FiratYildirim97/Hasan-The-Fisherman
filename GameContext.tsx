@@ -582,7 +582,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
           audioCtxRef.current.resume().catch(() => {});
       }
-      setRadioStation(prev => {
+      setRadioStation((prev: RadioStation) => {
           if (prev === 'off') return 'nature';
           if (prev === 'nature') return 'lofi';
           return 'off';
