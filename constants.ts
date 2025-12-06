@@ -1,4 +1,53 @@
-import { Rod, Location, Bait, Skill, FishBase, ItemType, Bobber, Decoration, Achievement, Charm } from './types';
+
+
+import { Rod, Location, Bait, Skill, FishBase, ItemType, Bobber, Decoration, Achievement, Charm, PetBase, PrestigeUpgrade, CraftingRecipe } from './types';
+
+export const PETS: PetBase[] = [
+  { id: 'cat', name: 'Tekir Kedi', price: 5000, icon: '🐱', desc: 'Satışlardan %10 fazla para kazandırır.', bonusType: 'money', bonusValue: 0.10 },
+  { id: 'pelican', name: 'Pelikan', price: 12000, icon: '🦢', desc: 'Seyahat masraflarını %20 azaltır.', bonusType: 'discount', bonusValue: 0.20 },
+  { id: 'seal', name: 'Fok Balığı', price: 25000, icon: '🦭', desc: 'Balık yakalarken +%20 XP kazandırır.', bonusType: 'xp', bonusValue: 0.20 },
+  { id: 'penguin', name: 'Penguen', price: 40000, icon: '🐧', desc: 'Nadir balık yakalama şansını %15 artırır.', bonusType: 'catch_rate', bonusValue: 0.15 }
+];
+
+export const PRESTIGE_UPGRADES: PrestigeUpgrade[] = [
+  { id: 'perm_money', name: 'Tüccar Ruhu', desc: 'Kalıcı Gelir Artışı', cost: 1, maxLevel: 50, effectPerLevel: 0.1, icon: '💰', type: 'money' },
+  { id: 'perm_xp', name: 'Bilge Balıkçı', desc: 'Kalıcı XP Bonusu', cost: 1, maxLevel: 50, effectPerLevel: 0.1, icon: '📜', type: 'xp' },
+  { id: 'perm_power', name: 'Titan Gücü', desc: 'Olta Gücü Artışı', cost: 3, maxLevel: 20, effectPerLevel: 0.1, icon: '💪', type: 'power' },
+  { id: 'perm_luck', name: 'Deniz Şansı', desc: 'Nadir Balık Şansı', cost: 2, maxLevel: 20, effectPerLevel: 0.05, icon: '🍀', type: 'luck' },
+  { id: 'perm_auto', name: 'Pasif Gelir', desc: 'Otomatik Ağ Verimi', cost: 2, maxLevel: 20, effectPerLevel: 0.2, icon: '⚙️', type: 'auto' },
+  { id: 'perm_discount', name: 'Pazarlıkçı', desc: 'Market İndirimi', cost: 5, maxLevel: 10, effectPerLevel: 0.02, icon: '🏷️', type: 'discount' }
+];
+
+export const CRAFTING_RECIPES: CraftingRecipe[] = [
+  { 
+    id: 'craft_spoon', 
+    name: 'Metal Kaşık Yem', 
+    desc: 'Parlak ve dayanıklı bir yem.', 
+    inputs: [{ itemName: 'Teneke', count: 2 }], 
+    output: { type: 'bait', id: 'lure_spoon', name: 'Kaşık (Spoon)', count: 1 } 
+  },
+  { 
+    id: 'craft_energy', 
+    name: 'Enerji İçeceği', 
+    desc: 'Kırık şişelerden geri dönüştürülmüş enerji.', 
+    inputs: [{ itemName: 'Kırık Şişe', count: 3 }], 
+    output: { type: 'buff', id: 'energy', name: 'Enerji İçeceği', count: 1 } 
+  },
+  { 
+    id: 'craft_spinner', 
+    name: 'Spinner Yem', 
+    desc: 'Mekanik bir balık avcısı.', 
+    inputs: [{ itemName: 'Teneke', count: 1 }, { itemName: 'Lastik', count: 1 }], 
+    output: { type: 'bait', id: 'lure_spinner', name: 'Döner Kaşık', count: 1 } 
+  },
+  {
+    id: 'craft_luck_charm',
+    name: 'Yonca Tılsımı',
+    desc: 'Doğanın şansı seninle olsun.',
+    inputs: [{ itemName: 'Yosun', count: 5 }],
+    output: { type: 'charm', id: 'clover', name: 'Dört Yapraklı Yonca', count: 1 } 
+  }
+];
 
 export const CHARMS: Charm[] = [
   { id: 'turtle_shell', name: 'Kaplumbağa Kabuğu', desc: 'Misina gerilimi %20 daha yavaş artar.', price: 5000, icon: '🐢', effect: 'tension' },
@@ -18,7 +67,8 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'shiny_hunter', title: 'Işıltılı', desc: 'Parlak bir balık tut', icon: '✨', condition: (s) => s.shinyCaught >= 1 },
   { id: 'gold_rusher', title: 'Altın Avcısı', desc: 'Altın balık tut', icon: '🏆', condition: (s) => s.goldenCaught >= 1 },
   { id: 'banker', title: 'Bankacı', desc: 'Bankada 50.000 TL biriktir', icon: '🏦', condition: (s, save) => (save?.stats.bankBalance || 0) >= 50000 },
-  { id: 'mapper', title: 'Kaşif', desc: 'Hazine haritasını tamamla', icon: '🗺️', condition: (s, save) => (save?.mapParts || 0) >= 4 }
+  { id: 'mapper', title: 'Kaşif', desc: 'Hazine haritasını tamamla', icon: '🗺️', condition: (s, save) => (save?.mapParts || 0) >= 4 },
+  { id: 'reborn', title: 'Yeniden Doğuş', desc: 'Prestij Yap (Rebirth)', icon: '🌀', condition: (s, save) => (save?.stats.prestigeLevel || 0) >= 1 }
 ];
 
 export const SKILLS: Skill[] = [
@@ -33,7 +83,8 @@ export const SKILLS: Skill[] = [
   { id: 'recycling', name: 'Geri Dönüşüm', desc: 'Çöpten daha iyi ödül', max: 5, reqLvl: 20 },
   { id: 'charisma', name: 'Karizma', desc: 'Daha sık bahşiş alırsın', max: 5, reqLvl: 22 },
   { id: 'traveler', name: 'Gezgin', desc: 'Seyahat ücreti ucuzlar', max: 5, reqLvl: 25 },
-  { id: 'nightowl', name: 'Gece Kuşu', desc: 'Gece avı bonusu artar', max: 5, reqLvl: 30 }
+  { id: 'nightowl', name: 'Gece Kuşu', desc: 'Gece avı bonusu artar', max: 5, reqLvl: 30 },
+  { id: 'double_hook', name: 'Çift İğne', desc: '2 Balık tutma şansı', max: 5, reqLvl: 35 }
 ];
 
 export const RODS: Rod[] = [
@@ -179,7 +230,7 @@ export const FISH_DB: Record<number, FishBase[]> = {
     { name: "Sudak", type: ItemType.FISH, value: 80, rarity: 3, emoji: "🐟", visual: { shape: 'trout', bodyColor: '#57534e', finColor: '#44403c', pattern: 'stripes' } },
     { name: "Kadife", type: ItemType.FISH, value: 90, rarity: 3, emoji: "🐟", visual: { shape: 'carp', bodyColor: '#eab308', finColor: '#ca8a04', pattern: 'none' } },
     { name: "Yayın Balığı", type: ItemType.FISH, value: 180, rarity: 4, emoji: "🐋", visual: { shape: 'catfish', bodyColor: '#374151', finColor: '#1f2937', pattern: 'none' } },
-    { name: "Göl Canavarı", type: ItemType.FISH, value: 600, rarity: 5, emoji: "🐉", visual: { shape: 'long', bodyColor: '#064e3b', finColor: '#022c22', pattern: 'stripes', detailColor: '#10b981' } },
+    { name: "Göl Canavarı", type: ItemType.FISH, value: 1000, rarity: 5, emoji: "🐉", visual: { shape: 'long', bodyColor: '#064e3b', finColor: '#022c22', pattern: 'stripes', detailColor: '#10b981' }, isBoss: true },
     { name: "Kırmızı Balık", type: ItemType.FISH, value: 5000, rarity: 6, emoji: "🔴", visual: { shape: 'trout', bodyColor: '#dc2626', finColor: '#991b1b', pattern: 'shiny' } }
   ],
   2: [
@@ -219,7 +270,7 @@ export const FISH_DB: Record<number, FishBase[]> = {
     { name: "Çamur Zıpzıpı", type: ItemType.FISH, value: 200, rarity: 2, emoji: "🐸", visual: { shape: 'catfish', bodyColor: '#57534e', finColor: '#292524', pattern: 'spots' } },
     { name: "Okçu Balığı", type: ItemType.FISH, value: 300, rarity: 3, emoji: "🏹", visual: { shape: 'trout', bodyColor: '#e5e5e5', finColor: '#171717', pattern: 'stripes' } },
     { name: "Barramundi", type: ItemType.FISH, value: 700, rarity: 4, emoji: "🐟", visual: { shape: 'carp', bodyColor: '#d4d4d8', finColor: '#a1a1aa', pattern: 'none' } },
-    { name: "Bataklık Canavarı", type: ItemType.FISH, value: 2000, rarity: 5, emoji: "🧟", visual: { shape: 'catfish', bodyColor: '#14532d', finColor: '#052e16', pattern: 'spots' } }
+    { name: "Bataklık Canavarı", type: ItemType.FISH, value: 2000, rarity: 5, emoji: "🧟", visual: { shape: 'catfish', bodyColor: '#14532d', finColor: '#052e16', pattern: 'spots' }, isBoss: true }
   ],
   7: [
     { name: "Balık Ağı", type: ItemType.JUNK, value: 0, rarity: 1, emoji: "🕸️", visual: { shape: 'blob', bodyColor: '#475569', finColor: '#334155', pattern: 'none' } },
@@ -323,7 +374,7 @@ export const FISH_DB: Record<number, FishBase[]> = {
     { name: "Sarı Yüzgeçli Orkinos", type: ItemType.FISH, value: 1500, rarity: 4, emoji: "🐟", visual: { shape: 'shark', bodyColor: '#1e3a8a', finColor: '#facc15', pattern: 'none' } },
     { name: "Wahoo", type: ItemType.FISH, value: 1800, rarity: 4, emoji: "🐟", visual: { shape: 'swordfish', bodyColor: '#3b82f6', finColor: '#1d4ed8', pattern: 'stripes' } },
     { name: "Marlin", type: ItemType.FISH, value: 3500, rarity: 5, emoji: "🦈", visual: { shape: 'swordfish', bodyColor: '#1e3a8a', finColor: '#60a5fa', pattern: 'stripes' } },
-    { name: "Büyük Beyaz Köpekbalığı", type: ItemType.FISH, value: 5000, rarity: 6, emoji: "🦈", visual: { shape: 'shark', bodyColor: '#94a3b8', finColor: '#cbd5e1', pattern: 'none' } }
+    { name: "Büyük Beyaz Köpekbalığı", type: ItemType.FISH, value: 5000, rarity: 6, emoji: "🦈", visual: { shape: 'shark', bodyColor: '#94a3b8', finColor: '#cbd5e1', pattern: 'none' }, isBoss: true }
   ],
   21: [
     { name: "Dev Yosun", type: ItemType.JUNK, value: 20, rarity: 1, emoji: "🌿", visual: { shape: 'long', bodyColor: '#3f6212', finColor: '#1a2e05', pattern: 'none' } },
@@ -362,7 +413,8 @@ export const FISH_DB: Record<number, FishBase[]> = {
     { name: "Deniz Hıyarı", type: ItemType.FISH, value: 2000, rarity: 4, emoji: "🥒", visual: { shape: 'long', bodyColor: '#a3e635', finColor: '#3f6212', pattern: 'spots' } },
     { name: "Tripod Balığı", type: ItemType.FISH, value: 3500, rarity: 5, emoji: "🔭", visual: { shape: 'long', bodyColor: '#9ca3af', finColor: '#4b5563', pattern: 'none' } },
     { name: "Dev Kalamar", type: ItemType.FISH, value: 10000, rarity: 6, emoji: "🦑", visual: { shape: 'squid', bodyColor: '#7f1d1d', finColor: '#450a0a', pattern: 'spots' } },
-    { name: "Siyah İnci", type: ItemType.TREASURE, value: 50000, rarity: 6, emoji: "⚫", visual: { shape: 'round', bodyColor: '#000', finColor: '#333', pattern: 'shiny' } }
+    { name: "Siyah İnci", type: ItemType.TREASURE, value: 50000, rarity: 6, emoji: "⚫", visual: { shape: 'round', bodyColor: '#000', finColor: '#333', pattern: 'shiny' } },
+    { name: "Kraken", type: ItemType.FISH, value: 100000, rarity: 7, emoji: "🦑", visual: { shape: 'squid', bodyColor: '#4c1d95', finColor: '#be185d', pattern: 'shiny' }, isBoss: true }
   ],
   27: [
     { name: "Antik Tablet", type: ItemType.JUNK, value: 500, rarity: 3, emoji: "🗿", visual: { shape: 'can', bodyColor: '#78716c', finColor: '#44403c', pattern: 'none' } },

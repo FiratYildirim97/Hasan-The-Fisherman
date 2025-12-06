@@ -1,7 +1,11 @@
+
 export enum ItemType {
   JUNK = 'junk',
   FISH = 'fish',
-  TREASURE = 'treasure'
+  TREASURE = 'treasure',
+  BAIT = 'bait',
+  BUFF = 'buff',
+  CHARM = 'charm'
 }
 
 export enum WeatherType {
@@ -17,7 +21,8 @@ export enum GameState {
   BITE = 'BITE',
   MINIGAME = 'MINIGAME',
   CAUGHT = 'CAUGHT',
-  BROKEN = 'BROKEN'
+  BROKEN = 'BROKEN',
+  DIVING = 'DIVING'
 }
 
 export interface Rod {
@@ -92,6 +97,7 @@ export interface FishBase {
   rarity: number; 
   emoji: string; 
   visual?: FishVisual; 
+  isBoss?: boolean; 
 }
 
 export interface CatchItem extends FishBase {
@@ -100,13 +106,13 @@ export interface CatchItem extends FishBase {
   shiny?: boolean;
   visual: FishVisual;
   perfect?: boolean;
-  golden?: boolean; // Feature 4: Golden Variant
-  masteryLevel?: number; // Feature 3: Mastery Star (0-3)
-  petName?: string; // Feature 17: Fish Naming
+  golden?: boolean; 
+  masteryLevel?: number; 
+  petName?: string; 
 }
 
 export interface Skill {
-  id: 'luck' | 'haggle' | 'repair' | 'biology' | 'patience' | 'strength' | 'cooking' | 'meteorology' | 'recycling' | 'charisma' | 'traveler' | 'nightowl';
+  id: 'luck' | 'haggle' | 'repair' | 'biology' | 'patience' | 'strength' | 'cooking' | 'meteorology' | 'recycling' | 'charisma' | 'traveler' | 'nightowl' | 'double_hook';
   name: string;
   desc: string;
   max: number;
@@ -131,7 +137,7 @@ export interface LifetimeStats {
   playTimeMinutes: number;
   shinyCaught: number;
   goldenCaught: number; 
-  offlineEarnings: number; // Feature 20
+  offlineEarnings: number; 
 }
 
 export interface PlayerStats {
@@ -145,7 +151,12 @@ export interface PlayerStats {
   aquaLimit: number;
   baitId: string | null;
   bobberId: string; 
-  bankBalance: number; // Feature 1: Bank
+  bankBalance: number; 
+  pearls: number; 
+  prestigeLevel: number; 
+  wormFarmLevel: number;
+  dailyStreak: number;
+  lastRewardTime: number;
 }
 
 export interface PediaEntry {
@@ -153,6 +164,71 @@ export interface PediaEntry {
   maxWeight: number;
   shinyCaught: boolean;
   goldenCaught: boolean; 
+  donated?: boolean; 
+}
+
+export interface PetBase {
+  id: string;
+  name: string;
+  price: number;
+  icon: string;
+  desc: string;
+  bonusType: 'money' | 'xp' | 'catch_rate' | 'discount';
+  bonusValue: number; 
+}
+
+export interface OwnedPet {
+  id: string; 
+  hunger: number; 
+  level: number; 
+  xp: number;
+}
+
+export interface PrestigeUpgrade {
+  id: string;
+  name: string;
+  desc: string;
+  cost: number;
+  maxLevel: number;
+  effectPerLevel: number; 
+  icon: string;
+  type: 'money' | 'xp' | 'luck' | 'power' | 'auto' | 'discount';
+}
+
+export interface CraftingRecipe {
+  id: string;
+  name: string;
+  desc: string;
+  inputs: { itemName: string; count: number }[];
+  output: { type: 'bait' | 'charm' | 'buff'; id: string; name: string; count: number };
+}
+
+export interface MysteryMerchant {
+  active: boolean;
+  expiry: number;
+  items: { type: 'bait' | 'buff' | 'rod'; id: string | number; price: number; name: string }[];
+}
+
+export type RadioStation = 'off' | 'nature' | 'lofi';
+
+export interface RestaurantState {
+  ingredients: {
+    vegetables: number; // Sebze
+    meze: number; // Meze tabağı
+    raki: number; // Rakı
+    oil: number; // Yağ
+  };
+  reputation: number;
+}
+
+export interface Customer {
+  id: number;
+  name: string;
+  order: 'grilled' | 'sandwich' | 'raki_table'; // Izgara, Ekmek Arası, Rakı Sofrası
+  fishReq: { rarity: number; minWeight: number }; // Minimum requirements for fish
+  patience: number;
+  maxPatience: number;
+  reward: number;
 }
 
 export interface SavedGame {
@@ -175,15 +251,18 @@ export interface SavedGame {
   rodMastery: Record<number, number>;
   ecologyScore: number;
   buffs: { xpBoostExpiry: number; goldenHook: boolean };
-  // NEW FEATURES SAVE DATA
-  autoNetLevel: number; // Feature 2 (0 = locked)
-  ownedCharms: string[]; // Feature 7
-  mapParts: number; // Feature 5
-  spinAvailable: number; // Feature 6 (Timestamp)
+  autoNetLevel: number; 
+  ownedCharms: string[]; 
+  mapParts: number; 
+  spinAvailable: number; 
   settings: {
-      sortMode: 'recent' | 'value' | 'weight'; // Feature 18
-      bulkSellSafe: boolean; // Feature 12
-  }
+      sortMode: 'recent' | 'value' | 'weight'; 
+      bulkSellSafe: boolean; 
+  };
+  ownedPets: OwnedPet[]; 
+  prestigeUpgrades: Record<string, number>; 
+  radioStation?: RadioStation;
+  restaurant?: RestaurantState;
 }
 
 export interface FloatingText {

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useGame } from './GameContext';
 import { Scene } from './components/Scene';
 import { Minigame } from './components/Minigame';
+import { DivingMinigame } from './components/DivingMinigame';
 import { UIOverlay } from './components/UIOverlay';
 import { Celebration } from './components/Celebration';
 
@@ -92,6 +93,7 @@ function App() {
     <div className="relative w-full h-[100dvh] flex flex-col bg-slate-900 overflow-hidden animate-[fadeIn_0.5s_ease-out]">
       <Scene />
       <Minigame />
+      <DivingMinigame />
       <UIOverlay />
       <Celebration />
     </div>
