@@ -7,7 +7,6 @@ import { Modal } from './Modal';
 import { ItemType, CatchItem, FishVisual } from '../types';
 import { FishRenderer } from './Scene';
 
-// ... (Section, ShopItem, StatRow, SidebarBtn - same as before)
 const Section: React.FC<{ title: string, children: React.ReactNode }> = ({ title, children }) => (
   <div className="space-y-2 mb-4">
     <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest pl-1 border-b border-slate-800 pb-1 mb-2">{title}</h3>
@@ -328,11 +327,490 @@ export const UIOverlay: React.FC = () => {
           </div>
       </Modal>
 
-      {/* ... (Keep existing modals: Bag, Aqua, Shop, Quests, etc.) ... */}
-      
-      {/* ... Active Event & Duel Overlay ... */}
+      <Modal isOpen={activeModal === 'bag'} onClose={() => setActiveModal(null)} title="Sırt Çantası">
+        <div className="flex justify-between items-center mb-4 bg-slate-800 p-3 rounded-xl border border-slate-700">
+            <div className="text-xs font-bold text-slate-400 uppercase">Kapasite</div>
+            <div className={`font-mono font-bold ${bag.length >= stats.bagLimit ? 'text-red-400' : 'text-green-400'}`}>
+                {bag.length} / {stats.bagLimit}
+            </div>
+        </div>
+        <div className="flex gap-2 mb-4">
+                <button onClick={sellAll} className="flex-1 py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold text-xs shadow-lg shadow-green-900/30">TÜMÜNÜ SAT</button>
+                <button onClick={recycleJunk} className="flex-1 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-bold text-xs shadow-lg">ÇÖPLERİ DÖNÜŞTÜR</button>
+        </div>
+        <div className="space-y-2">
+            {bag.length === 0 && <div className="text-center py-10 text-slate-500">Çanta boş.</div>}
+            {sortedBag.map(item => renderBagItem(item))}
+        </div>
+      </Modal>
 
-      {/* NEW COMBO BADGE */}
+      <Modal isOpen={activeModal === 'shop'} onClose={() => setActiveModal(null)} title="Market">
+        <div className="space-y-6">
+            {activeDiscount && <div className="p-3 bg-green-900/40 border border-green-500/50 rounded-xl text-green-400 text-xs font-bold text-center animate-pulse">🎉 EVCİL HAYVAN İNDİRİMİ AKTİF!</div>}
+            
+            <Section title="Oltalar">
+                {RODS.map(rod => (
+                    <ShopItem 
+                        key={rod.id} 
+                        title={rod.name} 
+                        desc={`Güç: ${rod.power} | Dayanıklılık: ${rod.maxHp}`} 
+                        price={rod.price} 
+                        owned={ownedRods.includes(rod.id)}
+                        equipped={stats.rodId === rod.id}
+                        onBuy={() => buyItem('rod', rod.id)}
+                        onEquip={() => equipRod(rod.id)}
+                        color={rod.color}
+                    />
+                ))}
+            </Section>
+            
+            <Section title="Yemler">
+                {BAITS.map(bait => (
+                    <ShopItem 
+                        key={bait.id}
+                        title={bait.name}
+                        desc={`Bonus: x${bait.bonus}`}
+                        price={bait.price}
+                        onBuy={() => buyItem('bait', bait.id)}
+                        active={stats.baitId === bait.id}
+                    />
+                ))}
+            </Section>
+
+            <Section title="Şamandıralar">
+                {BOBBERS.map(bobber => (
+                    <ShopItem 
+                        key={bobber.id}
+                        title={bobber.name}
+                        desc="Görsel Özelleştirme"
+                        price={bobber.price}
+                        owned={ownedBobbers.includes(bobber.id)}
+                        equipped={stats.bobberId === bobber.id}
+                        onBuy={() => buyItem('bobber', bobber.id)}
+                        onEquip={() => equipBobber(bobber.id)}
+                    />
+                ))}
+            </Section>
+
+            <Section title="Geliştirmeler">
+                <ShopItem title="Çanta Genişletme (+5)" desc="Daha fazla balık taşı." price={500} onBuy={() => buyItem('upgrade', 'bag')} />
+            </Section>
+        </div>
+      </Modal>
+
+      <Modal isOpen={activeModal === 'quests'} onClose={() => setActiveModal(null)} title="Görevler">
+        <div className="space-y-3">
+            {bounty.active && (
+                    <div className="p-4 bg-red-900/20 border border-red-500/50 rounded-xl flex justify-between items-center animate-pulse">
+                    <div>
+                        <div className="text-red-400 font-black text-sm tracking-widest uppercase">WANTED</div>
+                        <div className="text-white font-bold">{bounty.fishName} ({bounty.minWeight}kg+)</div>
+                    </div>
+                    <div className="text-right">
+                        <div className="text-yellow-400 font-bold">{bounty.reward} TL</div>
+                        <div className="text-xs text-red-400">{Math.floor(bounty.timeLeft)}s</div>
+                    </div>
+                    </div>
+            )}
+            {quests.map((q, i) => (
+                <div key={q.id} className={`p-4 rounded-xl border flex items-center justify-between ${q.claimed ? 'bg-slate-800/50 border-slate-700 opacity-50' : q.current >= q.target ? 'bg-green-900/20 border-green-500' : 'bg-slate-800 border-slate-700'}`}>
+                    <div>
+                        <div className="font-bold text-slate-200">{q.desc}</div>
+                        <div className="text-xs text-slate-400 mt-1">İlerleme: {Math.floor(q.current)} / {q.target}</div>
+                        <div className="w-24 h-1.5 bg-slate-900 rounded-full mt-2 overflow-hidden">
+                            <div className="h-full bg-blue-500 transition-all" style={{ width: `${(q.current / q.target) * 100}%` }} />
+                        </div>
+                    </div>
+                    {q.claimed ? (
+                        <span className="text-xs font-bold text-slate-500">ALINDI</span>
+                    ) : q.current >= q.target ? (
+                        <button onClick={() => claimQuest(i)} className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold text-xs animate-bounce">ÖDÜLÜ AL</button>
+                    ) : (
+                        <div className="text-xs font-bold text-yellow-400">{q.reward} TL</div>
+                    )}
+                </div>
+            ))}
+            {quests.length === 0 && <div className="text-center text-slate-500">Yeni görevler için seyahat et.</div>}
+        </div>
+      </Modal>
+
+      <Modal isOpen={activeModal === 'aqua'} onClose={() => setActiveModal(null)} title={`Akvaryum (${aquarium.length}/${stats.aquaLimit})`}>
+            <div className="mb-4 flex gap-2">
+                <button onClick={cleanAquarium} className="flex-1 py-3 bg-cyan-700 hover:bg-cyan-600 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2">
+                <Sparkles size={16}/> {Date.now() < filterExpiry ? 'TEMİZ (Bonus Aktif)' : 'TEMİZLE (250 TL)'}
+                </button>
+            </div>
+            <div className="space-y-2">
+            {aquarium.map(item => (
+                <div key={item.id} className="flex items-center justify-between p-3 bg-slate-800/50 border border-cyan-900/30 rounded-xl">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-slate-900 rounded flex items-center justify-center text-2xl relative overflow-hidden">
+                            <FishRenderer visual={item.visual} />
+                        </div>
+                        <div>
+                            <div className="font-bold text-sm text-cyan-100">{item.name}</div>
+                            <div className="text-xs text-cyan-400/60">Değer artışı: +{(Date.now() < filterExpiry ? 20 : 5)}%</div>
+                        </div>
+                    </div>
+                    <button onClick={() => sellItem(item.id, true)} className="px-3 py-1.5 bg-green-600/20 text-green-400 rounded-lg text-xs font-bold hover:bg-green-600/30">SAT ({Math.floor(item.value * (Date.now() < filterExpiry ? 1.2 : 1.05))})</button>
+                </div>
+            ))}
+            {aquarium.length === 0 && <div className="text-center py-10 text-slate-500">Akvaryum boş. Çantandan balık ekle.</div>}
+            </div>
+      </Modal>
+
+      <Modal isOpen={activeModal === 'skills'} onClose={() => setActiveModal(null)} title="Yetenekler">
+        <div className="space-y-3">
+            {SKILLS.map(skill => {
+                const level = skills[skill.id] || 0;
+                const cost = (level + 1) * 500;
+                const isLocked = stats.level < skill.reqLvl;
+                
+                return (
+                    <div key={skill.id} className={`p-3 rounded-xl border ${isLocked ? 'bg-slate-900/50 border-slate-800 opacity-60' : 'bg-slate-800 border-slate-700'}`}>
+                        <div className="flex justify-between items-start mb-2">
+                            <div>
+                                <div className="font-bold text-slate-200">{skill.name} <span className="text-blue-400 text-xs">Lvl {level}/{skill.max}</span></div>
+                                <div className="text-xs text-slate-400">{skill.desc}</div>
+                            </div>
+                            {!isLocked && level < skill.max && (
+                                <button onClick={() => upgradeSkill(skill.id)} className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold">{cost} TL</button>
+                            )}
+                            {level >= skill.max && <span className="text-green-400 text-xs font-bold">MAX</span>}
+                            {isLocked && <span className="text-red-400 text-xs font-bold">Lvl {skill.reqLvl}+</span>}
+                        </div>
+                        <div className="w-full h-1 bg-slate-900 rounded-full overflow-hidden">
+                            <div className="h-full bg-blue-500" style={{ width: `${(level/skill.max)*100}%` }} />
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+      </Modal>
+
+      <Modal isOpen={activeModal === 'pedia'} onClose={() => setActiveModal(null)} title="Balık Ansiklopedisi">
+        <div className="grid grid-cols-4 gap-2">
+            {Object.values(FISH_DB).flat().filter((v,i,a) => a.findIndex(t => t.name === v.name) === i && v.type === 'fish').map(fish => {
+                const entry = pedia[fish.name];
+                const isCaught = !!entry;
+                return (
+                    <div key={fish.name} 
+                        className={`aspect-square rounded-xl border flex flex-col items-center justify-center p-1 cursor-pointer transition-colors ${isCaught ? (entry.goldenCaught ? 'bg-yellow-900/20 border-yellow-500/50' : 'bg-slate-800 border-slate-700') : 'bg-slate-900 border-slate-800 opacity-50'}`}
+                        onClick={() => isCaught && setSelectedFish(fish.name)}
+                    >
+                        <div className="text-2xl mb-1">{isCaught ? fish.emoji : '❓'}</div>
+                        {isCaught && entry.donated && <div className="absolute top-1 right-1 text-[8px] bg-purple-500 text-white px-1 rounded">MÜZE</div>}
+                    </div>
+                );
+            })}
+        </div>
+      </Modal>
+    
+      <Modal isOpen={activeModal === 'crafting'} onClose={() => setActiveModal(null)} title="Zanaat Masası">
+        <div className="space-y-4">
+                {CRAFTING_RECIPES.map(recipe => (
+                    <div key={recipe.id} className="p-3 bg-slate-800 rounded-xl border border-slate-700">
+                        <div className="font-bold text-slate-200 mb-1">{recipe.name}</div>
+                        <div className="text-xs text-slate-400 mb-2">{recipe.desc}</div>
+                        <div className="flex gap-2 mb-3">
+                            {recipe.inputs.map((input, idx) => {
+                                const count = bag.filter(i => i.name === input.itemName).length;
+                                const hasEnough = count >= input.count;
+                                return (
+                                    <div key={idx} className={`px-2 py-1 rounded text-xs font-mono border ${hasEnough ? 'bg-slate-900 border-slate-600 text-slate-300' : 'bg-red-900/20 border-red-500/30 text-red-400'}`}>
+                                        {input.itemName}: {count}/{input.count}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <button className="w-full py-2 bg-amber-700 hover:bg-amber-600 rounded-lg text-white font-bold text-xs">ÜRET</button>
+                    </div>
+                ))}
+                <div className="p-4 bg-slate-900 rounded-xl border border-slate-800 text-center text-xs text-slate-500">
+                    Çöpler ve materyaller burada işlenir.
+                </div>
+        </div>
+      </Modal>
+
+      <Modal isOpen={activeModal === 'restaurant'} onClose={() => setActiveModal(null)} title="Hasan'ın Yeri">
+        {!restaurant.isUnlocked ? (
+            <div className="text-center py-8">
+                <div className="text-6xl mb-4">👨‍🍳</div>
+                <h3 className="text-xl font-bold text-white mb-2">Restoran Henüz Açılmadı</h3>
+                <p className="text-slate-400 text-sm mb-6">Kendi balık restoranını işletmek için seviye 5 ol ve 30.000 TL biriktir.</p>
+                <button 
+                    onClick={unlockRestaurant}
+                    disabled={stats.money < 30000 || stats.level < 5}
+                    className="px-8 py-3 bg-green-600 disabled:bg-slate-700 text-white rounded-xl font-bold"
+                >
+                    SATIN AL (30.000 TL)
+                </button>
+            </div>
+        ) : (
+            <div className="space-y-4">
+                <div className="flex bg-slate-800 p-1 rounded-lg">
+                    <button onClick={() => setRestaurantTab('kitchen')} className={`flex-1 py-2 rounded-md text-xs font-bold ${restaurantTab === 'kitchen' ? 'bg-slate-600 text-white' : 'text-slate-400'}`}>Mutfak</button>
+                    <button onClick={() => setRestaurantTab('market')} className={`flex-1 py-2 rounded-md text-xs font-bold ${restaurantTab === 'market' ? 'bg-slate-600 text-white' : 'text-slate-400'}`}>Tedarik</button>
+                </div>
+
+                {restaurantTab === 'kitchen' && (
+                    <div className="space-y-3">
+                        <div className="flex justify-between items-center text-xs text-slate-400 mb-2">
+                            <span>Müşteriler: {activeCustomers.length}/3</span>
+                            <span>İtibar: {restaurant.reputation}</span>
+                        </div>
+                        {activeCustomers.length === 0 && <div className="text-center py-6 text-slate-500">Müşteri bekleniyor...</div>}
+                        {activeCustomers.map(customer => (
+                            <div key={customer.id} className="p-3 bg-slate-800 border border-slate-700 rounded-xl">
+                                <div className="flex justify-between mb-2">
+                                    <span className="font-bold text-white">{customer.name}</span>
+                                    <span className="text-xs text-yellow-400 font-bold">{customer.reward} TL</span>
+                                </div>
+                                <div className="text-xs text-slate-300 mb-3">
+                                    İstek: {customer.fishReq.rarity} seviye üzeri, {customer.fishReq.minWeight}kg+ balık
+                                </div>
+                                <div className="grid grid-cols-4 gap-2">
+                                    {bag.filter(f => f.type === 'fish' && f.rarity >= customer.fishReq.rarity && f.weight >= customer.fishReq.minWeight).slice(0, 4).map(fish => (
+                                        <button key={fish.id} onClick={() => serveCustomer(customer.id, fish.id)} className="p-1 bg-green-900/30 border border-green-500/30 rounded text-[10px] text-green-300">
+                                            {fish.name}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="mt-2 text-right">
+                                    <button onClick={() => rejectCustomer(customer.id)} className="text-[10px] text-red-400 underline">Reddet</button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+                
+                {restaurantTab === 'market' && (
+                        <div className="grid grid-cols-2 gap-3">
+                            <button onClick={() => buyIngredient('vegetables', 5, 200)} className="p-3 bg-slate-800 rounded-xl border border-slate-700 flex flex-col items-center">
+                                <span className="text-2xl mb-1">🥬</span>
+                                <span className="text-xs font-bold text-white">Yeşillik (5x)</span>
+                                <span className="text-[10px] text-yellow-400">200 TL</span>
+                            </button>
+                            <button onClick={() => buyIngredient('raki', 1, 500)} className="p-3 bg-slate-800 rounded-xl border border-slate-700 flex flex-col items-center">
+                                <span className="text-2xl mb-1">🍼</span>
+                                <span className="text-xs font-bold text-white">İçecek (1x)</span>
+                                <span className="text-[10px] text-yellow-400">500 TL</span>
+                            </button>
+                        </div>
+                )}
+            </div>
+        )}
+      </Modal>
+
+      <Modal isOpen={activeModal === 'duels'} onClose={() => setActiveModal(null)} title="Lig ve Düellolar">
+        <div className="space-y-4">
+                <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-slate-800 to-slate-900 rounded-2xl border border-slate-700">
+                    <div className="text-4xl">{currentLeague.icon}</div>
+                    <div>
+                        <div className={`font-black text-lg ${currentLeague.color}`}>{currentLeague.name}</div>
+                        <div className="text-xs text-slate-400">Puan: {stats.leaguePoints} LP</div>
+                        {nextLeague && <div className="text-[10px] text-slate-500 mt-1">Sonraki Lig: {nextLeague.minLP} LP</div>}
+                    </div>
+                </div>
+
+                <Section title="Rakipler">
+                    <div className="space-y-2">
+                        {RIVALS.filter(r => LEAGUES.findIndex(l => l.id === r.minLeague) <= LEAGUES.findIndex(l => l.id === currentLeague.id)).map(rival => (
+                            <div key={rival.id} className="flex items-center justify-between p-3 bg-slate-800 rounded-xl border border-slate-700">
+                                <div className="flex items-center gap-3">
+                                    <div className="text-2xl bg-slate-900 w-10 h-10 flex items-center justify-center rounded-full">{rival.icon}</div>
+                                    <div>
+                                        <div className="font-bold text-white text-sm">{rival.name}</div>
+                                        <div className="text-[10px] text-slate-400">{rival.title}</div>
+                                    </div>
+                                </div>
+                                <button 
+                                onClick={() => { startDuel(rival.id); setActiveModal(null); }} 
+                                disabled={duel.active}
+                                className="px-3 py-1.5 bg-red-600 hover:bg-red-500 disabled:bg-slate-700 text-white rounded-lg text-xs font-bold"
+                                >
+                                    MEYDAN OKU
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </Section>
+        </div>
+      </Modal>
+
+      <Modal isOpen={activeModal === 'slots'} onClose={() => setActiveModal(null)} title="Şans Makinesi">
+        <div className="flex flex-col items-center">
+            <div className="bg-slate-950 p-6 rounded-3xl border-4 border-yellow-600 shadow-2xl mb-6 relative overflow-hidden">
+                <div className="flex gap-2 mb-2">
+                        {slotReels.map((r, i) => (
+                            <div key={i} className="w-16 h-24 bg-white text-4xl flex items-center justify-center rounded border-2 border-slate-300 shadow-inner">
+                                {isSpinning ? <span className="animate-spin">❓</span> : r}
+                            </div>
+                        ))}
+                </div>
+                <div className="absolute top-0 left-0 w-full h-full pointer-events-none shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] rounded-2xl"></div>
+            </div>
+            
+            {lastWin && (
+                <div className="mb-4 text-center animate-bounce">
+                        <div className="text-yellow-400 font-black text-2xl">{lastWin.type === 'jackpot' ? 'JACKPOT!' : 'KAZANDIN!'}</div>
+                        <div className="text-white font-bold">+{lastWin.amount} TL</div>
+                </div>
+            )}
+
+            <div className="flex items-center gap-4 mb-4">
+                <button onClick={() => setSlotBet(Math.max(100, slotBet - 100))} className="w-8 h-8 bg-slate-700 rounded-full font-bold">-</button>
+                <div className="font-mono text-xl font-bold text-yellow-500">{slotBet} TL</div>
+                <button onClick={() => setSlotBet(Math.min(stats.money, slotBet + 100))} className="w-8 h-8 bg-slate-700 rounded-full font-bold">+</button>
+            </div>
+
+            <button 
+                onClick={handleSlotSpin} 
+                disabled={isSpinning || stats.money < slotBet}
+                className="w-full py-4 bg-gradient-to-b from-red-500 to-red-700 text-white font-black text-xl rounded-2xl shadow-lg border-b-4 border-red-900 active:border-b-0 active:translate-y-1 transition-all disabled:opacity-50"
+            >
+                ÇEVİR
+            </button>
+            <div className="mt-2 text-xs text-slate-500">3 Kiraz = 2x | 3 Elmas = Jackpot</div>
+        </div>
+      </Modal>
+
+      <Modal isOpen={activeModal === 'bank'} onClose={() => setActiveModal(null)} title="Banka">
+        <div className="p-4 bg-slate-800 rounded-xl border border-slate-700 mb-4 text-center">
+            <div className="text-xs text-slate-400 font-bold uppercase tracking-widest">HESAP BAKİYESİ</div>
+            <div className="text-3xl font-mono font-bold text-green-400">{stats.bankBalance.toLocaleString()} TL</div>
+            <div className="text-[10px] text-green-500/80 mt-1">Faiz Getirisi: %1 / dakika</div>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4 mb-4">
+                <button onClick={() => bankDeposit(1000)} disabled={stats.money < 1000} className="py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-xs disabled:opacity-50">YATIR (1.000 TL)</button>
+                <button onClick={() => bankWithdraw(1000)} disabled={stats.bankBalance < 1000} className="py-3 bg-orange-600 hover:bg-orange-500 text-white rounded-xl font-bold text-xs disabled:opacity-50">ÇEK (1.000 TL)</button>
+        </div>
+        
+        <div className="text-xs text-slate-500 text-center">
+            Para bankadayken güvendedir ve faiz getirir.
+        </div>
+      </Modal>
+
+      <Modal isOpen={activeModal === 'pets'} onClose={() => setActiveModal(null)} title="Yoldaşlar">
+        <div className="space-y-3">
+            {PETS.map(pet => {
+                const isOwned = ownedPets.some(p => p.id === pet.id);
+                return (
+                    <div key={pet.id} className="flex items-center justify-between p-3 bg-slate-800 rounded-xl border border-slate-700">
+                        <div className="flex items-center gap-3">
+                            <div className="text-3xl">{pet.icon}</div>
+                            <div>
+                                <div className="font-bold text-white text-sm">{pet.name}</div>
+                                <div className="text-xs text-slate-400">{pet.desc}</div>
+                            </div>
+                        </div>
+                        {isOwned ? (
+                            <span className="text-xs font-bold text-green-400 px-3">SAHİPSİN</span>
+                        ) : (
+                            <button onClick={() => buyPet(pet.id)} className="px-3 py-1.5 bg-yellow-600 text-white rounded-lg text-xs font-bold">{pet.price} TL</button>
+                        )}
+                    </div>
+                );
+            })}
+        </div>
+      </Modal>
+    
+      <Modal isOpen={activeModal === 'career'} onClose={() => setActiveModal(null)} title="Kariyer">
+        <div className="space-y-6">
+            <Section title="İstatistikler">
+                    <StatRow label="Toplam Yakalanan" value={lifetimeStats.totalCaught} icon={<Fish size={14}/>} />
+                    <StatRow label="Toplam Kazanç" value={`${lifetimeStats.totalMoneyEarned} TL`} icon={<Briefcase size={14}/>} />
+                    <StatRow label="En Ağır Balık" value={`${lifetimeStats.heaviestFish} kg`} icon={<Scale size={14}/>} />
+                    <StatRow label="Efsanevi" value={lifetimeStats.legendariesCaught} icon={<Crown size={14}/>} />
+            </Section>
+
+            <Section title="Başarımlar">
+                <div className="grid grid-cols-5 gap-2">
+                        {ACHIEVEMENTS.map(ach => {
+                            const isUnlocked = ach.condition(lifetimeStats, { stats, mapParts } as any);
+                            return (
+                                <div key={ach.id} className={`aspect-square rounded-xl flex items-center justify-center text-2xl border ${isUnlocked ? 'bg-yellow-900/30 border-yellow-500' : 'bg-slate-800 border-slate-700 opacity-30 grayscale'}`} title={ach.title}>
+                                    {ach.icon}
+                                </div>
+                            );
+                        })}
+                </div>
+            </Section>
+        </div>
+      </Modal>
+    
+      <Modal isOpen={activeModal === 'prestige'} onClose={() => setActiveModal(null)} title="Prestij (Rebirth)">
+            <div className="text-center py-4">
+                <div className="text-fuchsia-500 font-bold text-lg mb-2">Mevcut İnciler: {stats.pearls} 🔮</div>
+                <p className="text-xs text-slate-400 mb-4">Seviye 50'ye ulaştığında her şeyi sıfırlayıp kalıcı güçlendirmelerle yeniden başlayabilirsin.</p>
+                
+                {canPrestige ? (
+                    <button onClick={doPrestige} className="w-full py-3 bg-fuchsia-700 hover:bg-fuchsia-600 text-white rounded-xl font-bold shadow-lg shadow-fuchsia-900/50 animate-pulse">
+                        PRESTİJ YAP (+{calculatePrestigePearls()} İnci)
+                    </button>
+                ) : (
+                    <div className="p-3 bg-slate-800 rounded-lg text-xs text-slate-500">
+                        Prestij için Seviye 50 olmalısın.
+                    </div>
+                )}
+            </div>
+            
+            <Section title="Kadim Market">
+                {PRESTIGE_UPGRADES.map(upg => {
+                    const level = prestigeUpgrades[upg.id] || 0;
+                    return (
+                        <div key={upg.id} className="flex justify-between items-center p-3 bg-slate-800/50 border border-fuchsia-900/30 rounded-xl mb-2">
+                            <div className="flex items-center gap-3">
+                                <div className="text-2xl">{upg.icon}</div>
+                                <div>
+                                    <div className="font-bold text-fuchsia-200 text-sm">{upg.name} <span className="text-slate-500 text-xs">Lvl {level}</span></div>
+                                    <div className="text-xs text-fuchsia-400/70">{upg.desc}</div>
+                                </div>
+                            </div>
+                            <button onClick={() => buyPrestigeUpgrade(upg.id)} className="px-3 py-1 bg-fuchsia-900/50 border border-fuchsia-500 text-fuchsia-300 rounded text-xs font-bold">
+                                {upg.cost} 🔮
+                            </button>
+                        </div>
+                    );
+                })}
+            </Section>
+      </Modal>
+
+      {duel.active && !duel.finished && (
+        <div className="absolute top-20 left-4 right-4 z-40 animate-slide-in-right">
+                <div className="bg-slate-900/90 backdrop-blur-md rounded-2xl border border-red-500/50 p-4 shadow-2xl">
+                    <div className="flex justify-between items-center mb-2">
+                        <div className="flex items-center gap-2">
+                            <div className="text-2xl">⚔️</div>
+                            <div className="font-bold text-red-400 uppercase tracking-widest text-xs">DÜELLO</div>
+                        </div>
+                        <div className="font-mono text-xl font-bold text-white">{duel.duration}s</div>
+                    </div>
+                    <div className="space-y-2">
+                        <div>
+                            <div className="flex justify-between text-xs font-bold text-slate-400 mb-1">
+                                <span>SEN</span>
+                                <span>{duel.playerScore}</span>
+                            </div>
+                            <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                                <div className="h-full bg-blue-500 transition-all" style={{ width: `${Math.min(100, (duel.playerScore / (duel.playerScore + duel.rivalScore || 1)) * 100)}%` }} />
+                            </div>
+                        </div>
+                        <div>
+                            <div className="flex justify-between text-xs font-bold text-slate-400 mb-1">
+                                <span>RAKİP</span>
+                                <span>{duel.rivalScore}</span>
+                            </div>
+                            <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                                <div className="h-full bg-red-500 transition-all" style={{ width: `${Math.min(100, (duel.rivalScore / (duel.playerScore + duel.rivalScore || 1)) * 100)}%` }} />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        </div>
+      )}
+      
       {combo > 0 && (
           <div className="absolute top-28 right-4 z-40 animate-slide-in-right">
               <div className="bg-slate-900/90 backdrop-blur-md rounded-2xl border-2 border-yellow-500/50 p-2 shadow-[0_0_20px_rgba(234,179,8,0.3)] flex flex-col items-center animate-[pulse_2s_infinite]">
@@ -386,7 +864,6 @@ export const UIOverlay: React.FC = () => {
         </div>
       </div>
       
-      {/* ... (Bottom Button Bar - Kept same) ... */}
       <div className="absolute bottom-0 w-full p-3 pb-safe-bottom z-30 flex flex-col gap-3 bg-gradient-to-t from-slate-950 via-slate-900/90 to-transparent">
         <div className="flex justify-between px-2 text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
            <div className="flex items-center gap-1">

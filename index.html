@@ -24,7 +24,7 @@
         background-color: #0f172a;
         color: #f8fafc;
         overflow: hidden; /* Prevent pull-to-refresh on mobile */
-        touch-action: none;
+        touch-action: manipulation; /* Changed from 'none' to allow button clicks */
         -webkit-tap-highlight-color: transparent;
         user-select: none;
         -webkit-user-select: none;
@@ -79,5 +79,14 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js')
+            .then(registration => console.log('SW registered: ', registration))
+            .catch(registrationError => console.log('SW registration failed: ', registrationError));
+        });
+      }
+    </script>
   </body>
 </html>
