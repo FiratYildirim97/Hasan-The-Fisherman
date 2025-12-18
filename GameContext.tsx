@@ -348,6 +348,20 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => clearInterval(crateInterval);
   }, [supplyCrate, gameState]);
 
+  // Aquarium passive income
+  useEffect(() => {
+    const incomeInterval = setInterval(() => {
+      if (!aquarium.length) return;
+      const rate = Date.now() < filterExpiry ? 0.02 : 0.01;
+      const income = aquarium.reduce((sum: number, fish: CatchItem) => sum + Math.floor(fish.value * rate), 0);
+      if (income <= 0) return;
+      setStats((s: PlayerStats) => ({ ...s, money: s.money + income }));
+      setLifetimeStats((l: LifetimeStats) => ({ ...l, totalMoneyEarned: l.totalMoneyEarned + income }));
+    }, 60000);
+
+    return () => clearInterval(incomeInterval);
+  }, [aquarium, filterExpiry]);
+
   // ... (Existing Functions: showToast, spawnText, playSound, castRod, etc.) ...
   // Keeping existing code short for brevity, assuming standard implementation follows...
   const showToast = useCallback((msg: string, color: string, sub?: string) => {
