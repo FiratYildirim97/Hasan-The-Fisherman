@@ -512,6 +512,10 @@ export const UIOverlay: React.FC = () => {
                         </button>
                     </div>
 
+                    <div className="text-[11px] text-cyan-100/70 bg-slate-900/40 border border-cyan-900/40 rounded-xl p-3">
+                        Akvaryumdaki her balık, değerinin %1'i kadar dakikalık pasif gelir sağlar. Tank temizken bu oran %2'ye çıkar.
+                    </div>
+
                     <div className="space-y-2 max-h-[30vh] overflow-y-auto pr-1">
                         {aquarium.map(item => (
                             <div key={item.id} className="flex items-center justify-between p-3 bg-slate-800/50 border border-cyan-900/30 rounded-xl">
