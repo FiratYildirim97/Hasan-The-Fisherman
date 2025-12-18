@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useGame } from '../GameContext';
 import { RODS, BAITS, BOBBERS, DECORATIONS, CHARMS, SKILLS, LOCATIONS, FISH_DB, ACHIEVEMENTS, PETS, PRESTIGE_UPGRADES, CRAFTING_RECIPES, RIVALS, LEAGUES, WHEEL_REWARDS } from '../constants';
@@ -69,6 +68,41 @@ const SidebarBtn = ({ icon, label, onClick, badge }: SidebarBtnProps) => (
     </button>
 );
 
+// New Component for Animated Fish in Aquarium
+const SwimmingFish: React.FC<{ item: CatchItem }> = ({ item }) => {
+    const [style, setStyle] = useState<React.CSSProperties>({});
+    
+    useEffect(() => {
+        const duration = 10 + Math.random() * 15;
+        const delay = -Math.random() * 20;
+        const top = 10 + Math.random() * 70;
+        
+        setStyle({
+            position: 'absolute',
+            top: `${top}%`,
+            width: '60px',
+            height: '60px',
+            animation: `swim ${duration}s linear ${delay}s infinite`,
+            zIndex: Math.floor(top)
+        });
+    }, []);
+
+    return (
+        <div style={style} className="pointer-events-none drop-shadow-md">
+            <FishRenderer visual={item.visual} />
+            <style>{`
+                @keyframes swim {
+                    0% { left: -100px; transform: scaleX(1); }
+                    49% { transform: scaleX(1); }
+                    50% { left: calc(100% + 50px); transform: scaleX(-1); }
+                    99% { transform: scaleX(-1); }
+                    100% { left: -100px; transform: scaleX(1); }
+                }
+            `}</style>
+        </div>
+    );
+};
+
 export const UIOverlay: React.FC = () => {
     const {
         stats, bag, castRod, gameState, ownedRods, ownedBobbers, ownedDecor, activeDecor, unlockedLocs, skills, achievements, dailyFortune,
@@ -77,10 +111,11 @@ export const UIOverlay: React.FC = () => {
         combo, tournament, bounty, closeTournamentResult, filterExpiry, cleanAquarium,
         marketTrend, marketMultipliers, rodMastery, activeDiscount,
         ecologyScore, buffs, visitorTip, collectVisitorTip, rerollFortune, cookFish,
-        autoNetLevel, ownedCharms, mapParts, spinAvailable, settings, newsTicker, bankDeposit, bankWithdraw, upgradeAutoNet, spinWheel, toggleSetting, collectOfflineEarnings, offlineEarningsModal,
+        autoNetLevel, ownedCharms, mapParts, spinAvailable, settings, newsTicker, bankDeposit, bankWithdraw, upgradeAutoNet, upgradeWormFarm, spinWheel, toggleSetting, collectOfflineEarnings, offlineEarningsModal,
         startDiving, ownedPets, buyPet, feedPet,
         prestigeUpgrades, doPrestige, buyPrestigeUpgrade, calculatePrestigePearls,
-        donateFish, craftItem, useItem, upgradeWormFarm,
+        // Removed duplicate upgradeWormFarm here
+        donateFish, craftItem, useItem,
         mysteryMerchant, buyMerchantItem,
         radioStation, cycleRadio, hookFish, playSlotMachine,
         dailyRewardPopup, claimDailyReward,
@@ -442,27 +477,57 @@ export const UIOverlay: React.FC = () => {
             </Modal>
 
             <Modal isOpen={activeModal === 'aqua'} onClose={() => setActiveModal(null)} title={`Akvaryum (${aquarium.length}/${stats.aquaLimit})`}>
-                <div className="mb-4 flex gap-2">
-                    <button onClick={cleanAquarium} className="flex-1 py-3 bg-cyan-700 hover:bg-cyan-600 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2">
-                        <Sparkles size={16} /> {Date.now() < filterExpiry ? 'TEMİZ (Bonus Aktif)' : 'TEMİZLE (250 TL)'}
-                    </button>
-                </div>
-                <div className="space-y-2">
-                    {aquarium.map(item => (
-                        <div key={item.id} className="flex items-center justify-between p-3 bg-slate-800/50 border border-cyan-900/30 rounded-xl">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-slate-900 rounded flex items-center justify-center text-2xl relative overflow-hidden">
-                                    <FishRenderer visual={item.visual} />
-                                </div>
-                                <div>
-                                    <div className="font-bold text-sm text-cyan-100">{item.name}</div>
-                                    <div className="text-xs text-cyan-400/60">Değer artışı: +{(Date.now() < filterExpiry ? 20 : 5)}%</div>
-                                </div>
-                            </div>
-                            <button onClick={() => sellItem(item.id, true)} className="px-3 py-1.5 bg-green-600/20 text-green-400 rounded-lg text-xs font-bold hover:bg-green-600/30">SAT ({Math.floor(item.value * (Date.now() < filterExpiry ? 1.2 : 1.05))})</button>
+                <div className="space-y-4">
+                    {/* Visual Tank Area */}
+                    <div className="relative w-full h-64 bg-gradient-to-b from-cyan-400/20 to-blue-600/40 rounded-3xl border-4 border-slate-800 overflow-hidden shadow-inner group">
+                        {/* Tank Glass Reflection */}
+                        <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent pointer-events-none z-50" />
+                        
+                        {/* Sand Bottom */}
+                        <div className="absolute bottom-0 w-full h-8 bg-orange-200/40 blur-[2px]" />
+                        
+                        {/* Bubbles */}
+                        <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
+                            {[...Array(5)].map((_, i) => (
+                                <div key={i} className="absolute bottom-[-20px] w-2 h-2 bg-white rounded-full animate-[floatUp_3s_linear_infinite]" style={{ left: `${Math.random() * 100}%`, animationDelay: `${Math.random() * 3}s` }} />
+                            ))}
                         </div>
-                    ))}
-                    {aquarium.length === 0 && <div className="text-center py-10 text-slate-500">Akvaryum boş. Çantandan balık ekle.</div>}
+
+                        {/* Swimming Fish */}
+                        {aquarium.map(item => (
+                            <SwimmingFish key={item.id} item={item} />
+                        ))}
+                        
+                        {aquarium.length === 0 && (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400/50 font-black italic tracking-widest text-xl rotate-[-5deg]">
+                                <Fish size={48} className="mb-2 opacity-20" />
+                                BOŞ TANK
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="mb-4 flex gap-2">
+                        <button onClick={cleanAquarium} className="flex-1 py-3 bg-cyan-700 hover:bg-cyan-600 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2">
+                            <Sparkles size={16} /> {Date.now() < filterExpiry ? 'TEMİZ (Bonus Aktif)' : 'TEMİZLE (250 TL)'}
+                        </button>
+                    </div>
+
+                    <div className="space-y-2 max-h-[30vh] overflow-y-auto pr-1">
+                        {aquarium.map(item => (
+                            <div key={item.id} className="flex items-center justify-between p-3 bg-slate-800/50 border border-cyan-900/30 rounded-xl">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-slate-900 rounded flex items-center justify-center text-2xl relative overflow-hidden">
+                                        <FishRenderer visual={item.visual} />
+                                    </div>
+                                    <div>
+                                        <div className="font-bold text-sm text-cyan-100">{item.name}</div>
+                                        <div className="text-xs text-cyan-400/60">Değer artışı: +{(Date.now() < filterExpiry ? 20 : 5)}%</div>
+                                    </div>
+                                </div>
+                                <button onClick={() => sellItem(item.id, true)} className="px-3 py-1.5 bg-green-600/20 text-green-400 rounded-lg text-xs font-bold hover:bg-green-600/30">SAT ({Math.floor(item.value * (Date.now() < filterExpiry ? 1.2 : 1.05))})</button>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </Modal>
 

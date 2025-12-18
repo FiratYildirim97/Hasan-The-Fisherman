@@ -2,331 +2,251 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { useGame } from '../GameContext';
 import { RODS } from '../constants';
-import { Anchor, AlertOctagon, Activity, HelpCircle } from 'lucide-react';
+import { Anchor, AlertOctagon, Zap, Target, HelpCircle } from 'lucide-react';
 import { FishRenderer } from './Scene';
 import { WeatherType, GameState } from '../types';
 
 export const Minigame: React.FC = () => {
-    const { gameState, activeFish, stats, reelIn, playSound, weather } = useGame();
+    const { gameState, activeFish, stats, reelIn, playSound } = useGame();
 
-    // -- REFS (Performance: We use refs instead of state for the animation loop) --
+    // -- Oyun Durumu --
+    const [progress, setProgress] = useState(0);
+    const [tension, setTension] = useState(0);
+    const [cursorPos, setCursorPos] = useState(0); // 0 - 100
+
+    // -- Referanslar (Physics Loop için) --
+    const progressRef = useRef(0);
     const tensionRef = useRef(0);
-    const progressRef = useRef(20);
-    const staminaRef = useRef(100);
-    const isReelingRef = useRef(false);
+    const cursorPosRef = useRef(0);
+    const cursorDirRef = useRef(1); // 1: sağa, -1: sola
     const requestRef = useRef<number>(0);
-
-    // -- DOM REFS (Direct manipulation avoids React re-renders) --
-    const tensionCircleRef = useRef<SVGCircleElement>(null);
-    const progressCircleRef = useRef<SVGCircleElement>(null);
-    const staminaBarRef = useRef<HTMLDivElement>(null);
-    const staminaTextRef = useRef<HTMLSpanElement>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const statusTextRef = useRef<HTMLDivElement>(null);
-    const btnRef = useRef<HTMLButtonElement>(null);
-
-    // -- LOGIC CONSTANTS --
-    const params = useRef({
-        tensionGain: 0.5,
-        tensionLoss: 1.0,
-        reelSpeedBase: 0.1,
-        escapeSpeedBase: 0.05,
-        staminaDrain: 0.05,
-        isBoss: false
+    
+    // -- Konfigürasyon --
+    const config = useRef({
+        speed: 2,
+        targetStart: 40,
+        targetWidth: 20,
+        progressGain: 25,
+        failPenalty: 12
     });
-
-    // Helper to update visual color of tension ring
-    const updateTensionColor = (t: number) => {
-        if (!tensionCircleRef.current) return;
-        let color = '#10b981'; // Green
-        if (t > 50) color = '#f59e0b'; // Orange
-        if (t > 80) color = '#ef4444'; // Red
-        tensionCircleRef.current.style.stroke = color;
-        tensionCircleRef.current.style.filter = t > 80 ? `drop-shadow(0 0 10px ${color})` : 'none';
-    };
-
-    const handleDown = (e: React.SyntheticEvent) => {
-        e.preventDefault();
-        if (!isReelingRef.current) {
-            isReelingRef.current = true;
-            playSound('cast');
-            if (btnRef.current) {
-                btnRef.current.style.transform = 'scale(0.95)';
-                btnRef.current.style.backgroundColor = '#334155'; // slate-700
-                btnRef.current.innerText = 'ÇEKİYOR...';
-            }
-        }
-    };
-
-    const handleUp = (e: React.SyntheticEvent) => {
-        e.preventDefault();
-        if (isReelingRef.current) {
-            isReelingRef.current = false;
-            if (btnRef.current) {
-                btnRef.current.style.transform = 'scale(1)';
-                btnRef.current.style.backgroundColor = ''; // Reset to class default
-                btnRef.current.innerText = 'SAR!';
-            }
-        }
-    };
 
     const endGame = useCallback((success: boolean, snapped: boolean) => {
         cancelAnimationFrame(requestRef.current);
-        reelIn(success, snapped, success && staminaRef.current < 10);
+        // %95 üzeri ilerleme "Perfect" sayılır
+        reelIn(success, snapped, success && progressRef.current > 95);
     }, [reelIn]);
 
-    // Initialization
     useEffect(() => {
-        if (gameState === 'MINIGAME' && activeFish) {
+        if (gameState === GameState.MINIGAME && activeFish) {
             const rod = RODS[stats.rodId];
             const rarity = activeFish.rarity;
-            const isBoss = activeFish.isBoss || false;
+            
+            // KOLAYLAŞTIRMA: Temel genişlik 15'ten 22'ye çıkarıldı.
+            const width = Math.min(45, 22 + (rod.power * 2.2));
+            
+            // KOLAYLAŞTIRMA: Hız ölçeklendirmesi 0.6'dan 0.45'e düşürüldü.
+            const speed = 1.3 + (rarity * 0.45);
+            
+            // Rastgele bir hedef başlangıç noktası
+            const start = 10 + Math.random() * (80 - width);
 
-            let difficultyMod = 1.0;
-            if (weather === WeatherType.RAIN) difficultyMod = 1.1;
-            if (weather === WeatherType.STORM) difficultyMod = 1.25;
-
-            params.current = {
-                tensionGain: (0.6 * difficultyMod) / Math.sqrt(rod.power),
-                tensionLoss: 1.2,
-                reelSpeedBase: 0.15 * Math.sqrt(rod.power),
-                escapeSpeedBase: (0.08 * rarity) * difficultyMod,
-                staminaDrain: (0.1 * rod.power) / rarity,
-                isBoss: isBoss
+            config.current = {
+                speed,
+                targetStart: start,
+                targetWidth: width,
+                progressGain: 22 + (rod.power * 1.5),
+                // KOLAYLAŞTIRMA: Hata cezası düşürüldü.
+                failPenalty: Math.max(5, 12 - (rod.power * 0.5))
             };
 
-            // Reset Values
+            progressRef.current = 0;
             tensionRef.current = 0;
-            progressRef.current = 20;
-            staminaRef.current = 100;
-            isReelingRef.current = false;
+            cursorPosRef.current = 0;
+            cursorDirRef.current = 1;
+            
+            setProgress(0);
+            setTension(0);
+            setCursorPos(0);
         }
-    }, [gameState, activeFish, stats.rodId, weather]);
+    }, [gameState, activeFish, stats.rodId]);
 
-    // Main Physics Loop (60 FPS)
     useEffect(() => {
-        if (gameState !== 'MINIGAME') { cancelAnimationFrame(requestRef.current); return; }
-
-        let lastStatus = '';
+        if (gameState !== GameState.MINIGAME) return;
 
         const loop = () => {
-            const pm = params.current;
-            let t = tensionRef.current;
-            let p = progressRef.current;
-            let s = staminaRef.current;
-
-            // 1. Physics Calculation
-            if (isReelingRef.current) {
-                t += pm.tensionGain;
-                s = Math.max(0, s - (pm.staminaDrain * 0.1));
-            } else {
-                t -= pm.tensionLoss;
+            const cfg = config.current;
+            
+            // İmleç hareketi
+            cursorPosRef.current += (cfg.speed * cursorDirRef.current);
+            
+            if (cursorPosRef.current >= 100) {
+                cursorPosRef.current = 100;
+                cursorDirRef.current = -1;
+            } else if (cursorPosRef.current <= 0) {
+                cursorPosRef.current = 0;
+                cursorDirRef.current = 1;
             }
 
-            // Constraints
-            if (t < 0) t = 0;
-            if (t >= 100) { endGame(false, true); return; }
-
-            const riskRewardFactor = 0.2 + (t / 100) * 3.0; // High risk = 3.2x speed
-
-            if (isReelingRef.current) {
-                p += pm.reelSpeedBase * riskRewardFactor;
-                if (t > 70) s = Math.max(0, s - pm.staminaDrain); // Critical damage to fish
-            } else {
-                const fatigueFactor = 0.2 + (s / 100) * 0.8;
-                p -= pm.escapeSpeedBase * fatigueFactor;
-            }
-
-            if (p < 0) p = 0;
-            if (p >= 100) { endGame(true, false); return; }
-
-            // Update Refs
-            tensionRef.current = t;
-            progressRef.current = p;
-            staminaRef.current = s;
-
-            // 2. Direct DOM Updates (No React Render)
-
-            // Tension Ring (Inner) - Radius 40 -> Circumference ~251
-            if (tensionCircleRef.current) {
-                const circ = 2 * Math.PI * 40;
-                const offset = circ - (t / 100) * circ;
-                tensionCircleRef.current.style.strokeDashoffset = `${offset}px`;
-                updateTensionColor(t);
-            }
-
-            // Progress Ring (Outer) - Radius 48 -> Circumference ~301
-            if (progressCircleRef.current) {
-                const circ = 2 * Math.PI * 48;
-                const offset = circ - (p / 100) * circ;
-                progressCircleRef.current.style.strokeDashoffset = `${offset}px`;
-            }
-
-            // Stamina Bar
-            if (staminaBarRef.current) {
-                staminaBarRef.current.style.width = `${s}%`;
-                staminaBarRef.current.style.backgroundColor = s < 30 ? '#ef4444' : '#facc15';
-            }
-            if (staminaTextRef.current) {
-                staminaTextRef.current.innerText = `${Math.ceil(s)}%`;
-            }
-
-            // Shake Effect & Status Text (Throttled text updates)
-            let currentStatus = 'Güvenli Çekim...';
-            let statusColor = 'text-slate-500';
-
-            if (t > 80) {
-                currentStatus = 'KOPUYOR! BIRAK!';
-                statusColor = 'text-red-500';
-                if (containerRef.current) containerRef.current.style.transform = `translate(${Math.random() * 4 - 2}px, ${Math.random() * 4 - 2}px)`;
-            } else if (t > 50) {
-                currentStatus = 'HIZLI ÇEKİM!';
-                statusColor = 'text-green-400';
-                if (containerRef.current) containerRef.current.style.transform = 'none';
-            } else {
-                if (containerRef.current) containerRef.current.style.transform = 'none';
-            }
-
-            // Only touch DOM text if changed
-            if (currentStatus !== lastStatus && statusTextRef.current) {
-                statusTextRef.current.className = `font-black text-xl animate-pulse ${statusColor}`;
-                statusTextRef.current.innerText = currentStatus;
-                lastStatus = currentStatus;
-            }
-
+            setCursorPos(cursorPosRef.current);
             requestRef.current = requestAnimationFrame(loop);
         };
 
         requestRef.current = requestAnimationFrame(loop);
         return () => cancelAnimationFrame(requestRef.current);
-    }, [gameState, endGame]);
+    }, [gameState]);
 
-    if (gameState !== GameState.MINIGAME && gameState !== GameState.BITE) return null;
+    const handleAction = (e?: React.SyntheticEvent) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        const cfg = config.current;
+        const isHit = cursorPosRef.current >= cfg.targetStart && cursorPosRef.current <= (cfg.targetStart + cfg.targetWidth);
 
-    const isBoss = params.current.isBoss;
+        if (isHit) {
+            playSound('success');
+            progressRef.current = Math.min(100, progressRef.current + cfg.progressGain);
+            setProgress(progressRef.current);
+            
+            // Başarılı vuruşta hedef bölge yer değiştirsin
+            config.current.targetStart = 10 + Math.random() * (80 - cfg.targetWidth);
+            
+            if (progressRef.current >= 100) {
+                endGame(true, false);
+            }
+        } else {
+            playSound('fail');
+            tensionRef.current = Math.min(100, tensionRef.current + cfg.failPenalty);
+            setTension(tensionRef.current);
+            
+            if (tensionRef.current >= 100) {
+                endGame(false, true);
+            }
+        }
+    };
+
+    if (gameState !== GameState.MINIGAME) return null;
+
+    const cfg = config.current;
 
     return (
-        <div className={`relative flex-1 w-full h-full flex flex-col items-center justify-center p-6 ${gameState === GameState.BITE ? 'animate-[shake_0.2s_infinite]' : ''}`}>
-            <div className="absolute inset-0 bg-blue-950/90 pointer-events-none" />
-
-            {/* Dynamic Background Ripples */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                {[...Array(5)].map((_, i) => (
-                    <div
-                        key={i}
-                        className="absolute rounded-full border-2 border-white/10 animate-[sonar_4s_linear_infinite]"
-                        style={{
-                            left: '50%',
-                            top: '50%',
-                            width: `${(i + 1) * 20}%`,
-                            height: `${(i + 1) * 20}%`,
-                            marginLeft: `-${(i + 1) * 10}%`,
-                            marginTop: `-${(i + 1) * 10}%`,
-                            animationDelay: `${i * 0.8}s`
-                        }}
-                    />
-                ))}
-            </div>
-
-            <h2 className="text-3xl font-black text-white mb-8 tracking-[0.3em] z-10 animate-pulse">MINIGAME</h2>
-
-            {/* Boss Indicator */}
-            {isBoss && (
-                <div className="absolute top-16 animate-pulse flex items-center gap-2 z-10">
-                    <AlertOctagon className="text-red-500" />
-                    <span className="text-red-500 font-black text-2xl tracking-widest drop-shadow-[0_0_10px_red]">BOSS SAVAŞI</span>
-                    <AlertOctagon className="text-red-500" />
-                </div>
-            )}
-
-            {/* Fish Stamina Bar (Top) */}
-            <div className="absolute top-28 w-64 z-10">
-                <div className="flex justify-between text-[10px] text-slate-400 font-bold mb-1 uppercase tracking-widest">
-                    <span>Balık Gücü</span>
-                    <span ref={staminaTextRef} className="text-white">100%</span>
-                </div>
-                <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-600">
-                    <div ref={staminaBarRef} className="h-full bg-yellow-400 transition-none" style={{ width: '100%' }} />
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-6 bg-slate-950/95 backdrop-blur-xl animate-fade-in">
+            {/* Header */}
+            <div className="text-center mb-12">
+                <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400 tracking-[0.3em] mb-2 italic">
+                    KRİTİK VURUŞ
+                </h2>
+                <div className="flex items-center justify-center gap-3">
+                    <div className="px-4 py-1.5 bg-slate-800 border border-slate-700 rounded-full text-slate-400 text-[10px] font-black tracking-widest uppercase flex items-center gap-2">
+                        <HelpCircle size={12} className="text-cyan-400" />
+                        {activeFish?.isBoss ? 'GİZEMLİ DEV' : 'BİLİNMEYEN AV'}
+                    </div>
+                    {activeFish?.isBoss && (
+                        <div className="flex items-center gap-1 text-red-500 animate-pulse bg-red-500/10 px-3 py-1 rounded-full border border-red-500/30">
+                            <AlertOctagon size={14} /> 
+                            <span className="font-black text-[10px] tracking-widest">TEHLİKE</span>
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* MAIN CIRCULAR UI */}
-            <div ref={containerRef} className="relative w-72 h-72 flex items-center justify-center my-8 transition-transform duration-75 will-change-transform">
-                {/* Background Circle */}
-                <div className="absolute inset-0 rounded-full border-8 border-slate-800 bg-slate-900/80 shadow-2xl"></div>
+            {/* Main Game Interface */}
+            <div className="w-full max-w-md flex flex-col items-center gap-12">
+                
+                {/* Visual Status Bars */}
+                <div className="w-full space-y-6">
+                    {/* Catch Progress */}
+                    <div className="space-y-2">
+                        <div className="flex justify-between items-end px-1">
+                            <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">MÜCADELE</span>
+                            <span className="text-xs font-mono font-bold text-white">{Math.floor(progress)}%</span>
+                        </div>
+                        <div className="w-full h-4 bg-slate-900 rounded-full border border-slate-800 overflow-hidden p-0.5">
+                            <div 
+                                className="h-full bg-gradient-to-r from-blue-600 to-cyan-400 rounded-full transition-all duration-300 shadow-[0_0_15px_rgba(59,130,246,0.5)]"
+                                style={{ width: `${progress}%` }}
+                            />
+                        </div>
+                    </div>
 
-                <svg className="absolute inset-0 w-full h-full rotate-[-90deg] overflow-visible">
-                    {/* 1. Tension Arc (Inner - Risk) */}
-                    <circle
-                        ref={tensionCircleRef}
-                        cx="50%" cy="50%" r="40%" fill="none"
-                        stroke="#10b981"
-                        strokeWidth="8"
-                        strokeLinecap="round"
-                        strokeDasharray={`${2 * Math.PI * 40}px`}
-                        strokeDashoffset={`${2 * Math.PI * 40}px`}
-                        className="transition-none"
-                    />
-
-                    {/* 2. Progress Arc (Outer - Success) */}
-                    <circle
-                        ref={progressCircleRef}
-                        cx="50%" cy="50%" r="48%" fill="none"
-                        stroke="#3b82f6"
-                        strokeWidth="6"
-                        strokeLinecap="round"
-                        strokeDasharray={`${2 * Math.PI * 48}px`}
-                        strokeDashoffset={`${2 * Math.PI * 48 * 0.8}px`} // Start at 20%
-                        className="transition-none"
-                    />
-                </svg>
-
-                {/* Center Icon */}
-                <div className="relative z-10 w-32 h-32 flex items-center justify-center rounded-full">
-                    <div className="absolute inset-0 bg-radial-gradient from-white/10 to-transparent rounded-full animate-pulse"></div>
-                    <div className="w-24 h-24 drop-shadow-2xl">
-                        <FishRenderer visual={activeFish?.visual} />
+                    {/* Line Tension */}
+                    <div className="space-y-2">
+                        <div className="flex justify-between items-end px-1">
+                            <span className="text-[10px] font-black text-orange-400 uppercase tracking-widest">MİSİNA GERİLİMİ</span>
+                            <span className="text-xs font-mono font-bold text-white">{Math.floor(tension)}%</span>
+                        </div>
+                        <div className="w-full h-3 bg-slate-900 rounded-full border border-slate-800 overflow-hidden p-0.5">
+                            <div 
+                                className={`h-full rounded-full transition-all duration-300 ${tension > 75 ? 'bg-red-500 animate-pulse' : 'bg-orange-500'}`}
+                                style={{ width: `${tension}%` }}
+                            />
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Status Text (Optimized) */}
-            <div className="h-10 flex items-center justify-center mb-4">
-                <div ref={statusTextRef} className="text-slate-500 text-sm font-medium">Hazır...</div>
-            </div>
+                {/* The Timing Bar */}
+                <div className="relative w-full h-24 bg-slate-900/50 rounded-3xl border-4 border-slate-800 shadow-2xl flex items-center px-4">
+                    {/* Background Decorative Lines */}
+                    <div className="absolute inset-0 flex justify-between px-8 py-4 opacity-10 pointer-events-none">
+                        {[...Array(10)].map((_, i) => <div key={i} className="w-px h-full bg-white" />)}
+                    </div>
 
-            {/* Control Button */}
-            <button
-                ref={btnRef}
-                className="w-full max-w-xs py-6 rounded-2xl font-black text-2xl tracking-[0.2em] shadow-[0_10px_20px_rgba(0,0,0,0.5)] transition-colors touch-manipulation border-b-8 select-none bg-gradient-to-b from-blue-500 to-blue-700 border-blue-900 text-white"
-                onMouseDown={handleDown}
-                onMouseUp={handleUp}
-                onMouseLeave={handleUp}
-                onTouchStart={handleDown}
-                onTouchEnd={handleUp}
-            >
-                SAR!
-            </button>
+                    {/* Target Zone (Sweet Spot) */}
+                    <div 
+                        className="absolute h-12 bg-gradient-to-b from-green-400/40 to-emerald-600/40 border-x-2 border-emerald-400 backdrop-blur-sm rounded-lg shadow-[0_0_30px_rgba(52,211,153,0.3)] flex items-center justify-center overflow-hidden"
+                        style={{ 
+                            left: `${cfg.targetStart}%`, 
+                            width: `${cfg.targetWidth}%`,
+                            transition: 'left 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)' 
+                        }}
+                    >
+                         <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.1)_50%,transparent_75%)] bg-[length:50px_50px] animate-[marquee_2s_linear_infinite]" />
+                         <Target size={20} className="text-emerald-300/50" />
+                    </div>
 
-            {/* Tutorial Text */}
-            <div className="mt-6 flex items-start gap-2 max-w-xs text-left bg-slate-900/50 p-3 rounded-xl border border-white/5">
-                <HelpCircle size={16} className="text-blue-400 shrink-0 mt-0.5" />
-                <div className="text-[10px] text-slate-300 leading-relaxed">
-                    <span className="text-white font-bold block mb-1">NASIL OYNANIR?</span>
-                    Tuşa basılı tutarak ibreyi yükselt. <span className="text-red-400 font-bold">Kırmızı bölgeye</span> yaklaştıkça balık <span className="text-green-400 font-bold">çok daha hızlı</span> gelir.
+                    {/* Cursor */}
+                    <div 
+                        className="absolute w-1.5 h-16 bg-white shadow-[0_0_20px_white] rounded-full z-20 transition-none"
+                        style={{ left: `${cursorPos}%`, transform: 'translateX(-50%)' }}
+                    >
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-white"><Zap size={14} fill="white" /></div>
+                        <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 text-white rotate-180"><Zap size={14} fill="white" /></div>
+                    </div>
                 </div>
+
+                {/* Big Action Button */}
+                <button
+                    onMouseDown={handleAction}
+                    onTouchStart={handleAction}
+                    className="group relative w-full py-8 bg-gradient-to-b from-blue-500 to-blue-700 active:scale-95 active:from-blue-800 transition-all rounded-[2rem] shadow-[0_10px_40px_rgba(37,99,235,0.4)] border-b-8 border-blue-900 overflow-hidden"
+                >
+                    <div className="absolute inset-0 bg-white/10 opacity-0 group-active:opacity-100 transition-opacity" />
+                    <div className="relative flex flex-col items-center gap-1">
+                        <span className="text-3xl font-black text-white tracking-[0.1em] drop-shadow-md uppercase">Vuruş Yap!</span>
+                        <span className="text-[10px] text-blue-200 font-bold opacity-70 uppercase tracking-widest">Tam hizadayken yakala</span>
+                    </div>
+                    
+                    {/* Visual Pulse for Hint */}
+                    <div className="absolute inset-0 border-4 border-white/20 rounded-[2rem] animate-ping pointer-events-none opacity-20" />
+                </button>
+            </div>
+
+            {/* Mystery Indicator instead of Fish Image */}
+            <div className="mt-auto flex flex-col items-center opacity-40">
+                <div className="w-24 h-24 flex items-center justify-center bg-slate-800 rounded-full border-4 border-slate-700 animate-pulse mb-2">
+                    <HelpCircle size={48} className="text-slate-600" />
+                </div>
+                <span className="text-[10px] font-bold text-slate-500 tracking-[0.3em] uppercase">Bilinmiyor...</span>
             </div>
 
             <style>{`
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
-        @keyframes sonar { 0% { opacity: 0; transform: scale(0.5); } 50% { opacity: 0.5; } 100% { opacity: 0; transform: scale(1.5); } }
-        @keyframes shake {
-          0%, 100% { transform: translate(0,0); }
-          25% { transform: translate(-5px, 5px) rotate(-1deg); }
-          50% { transform: translate(5px, -5px) rotate(1deg); }
-          75% { transform: translate(-5px, -5px) rotate(-1deg); }
-        }
-      `}</style>
+                @keyframes marquee {
+                    from { background-position: 0 0; }
+                    to { background-position: 50px 0; }
+                }
+                .animate-fade-in { animation: fadeIn 0.4s ease-out; }
+            `}</style>
         </div>
     );
 };
